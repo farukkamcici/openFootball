@@ -176,13 +176,13 @@ cython_debug/
 *.xlsx
 *.xls
 *.tsv
-*.txt
 *.dat
 *.xml
 *.sql
 *.db
 *.sqlite
 *.sqlite3
+*.duckdb
 
 # Database dumps
 *.dump
@@ -197,7 +197,6 @@ output/
 outputs/
 results/
 exports/
-warehouse/
 lake/
 
 # ML Models and artifacts

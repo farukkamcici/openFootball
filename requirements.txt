@@ -1,0 +1,12 @@
+duckdb
+polars
+pyarrow
+pandas
+dbt-core
+dbt-duckdb
+great-expectations
+streamlit
+prefect
+python-dotenv
+ruff
+black

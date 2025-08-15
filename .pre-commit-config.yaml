@@ -1,0 +1,31 @@
+default_language_version:
+  python: python3.12
+
+exclude: |
+  (?x)^(
+    data/|
+    warehouse/|
+    quality/site/|
+    transform/target/|
+    \.venv/|
+    venv/
+  )
+
+repos:
+  - repo: https://github.com/charliermarsh/ruff-pre-commit
+    rev: v0.4.5
+    hooks:
+      - id: ruff
+        args: [--fix, --exit-non-zero-on-fix, --line-length=88]
+
+  - repo: https://github.com/psf/black
+    rev: 23.12.1
+    hooks:
+      - id: black
+        args: ["--line-length=88"]
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
