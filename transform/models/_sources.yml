@@ -1,0 +1,15 @@
+version: 2
+sources:
+  - name: tm
+    schema: main
+    tables:
+      - name: competitions
+      - name: games
+      - name: clubs
+      - name: players
+      - name: appearances
+      - name: player_valuations
+      - name: club_games
+      - name: game_events
+      - name: game_lineups
+      - name: transfers

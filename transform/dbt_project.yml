@@ -1,0 +1,15 @@
+name: 'transform'
+version: '1.0'
+config-version: 2
+
+profile: 'transform'
+
+model-paths: ['models']
+analysis-paths: ['analysis']
+test-paths: ['tests']
+seed-paths: ['seeds']
+macro-paths: ['macros']
+snapshot-paths: ['snapshots']
+
+models:
+  +materialized: table

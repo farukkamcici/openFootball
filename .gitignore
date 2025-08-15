@@ -200,7 +200,6 @@ exports/
 lake/
 
 # ML Models and artifacts
-models/
 *.pkl
 *.pickle
 *.joblib
