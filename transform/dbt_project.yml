@@ -1,15 +1,15 @@
-name: 'transform'
-version: '1.0'
+name: openfootball
+version: 0.1.0
 config-version: 2
 
-profile: 'transform'
+profile: openfootball_duckdb
 
-model-paths: ['models']
-analysis-paths: ['analysis']
-test-paths: ['tests']
-seed-paths: ['seeds']
-macro-paths: ['macros']
-snapshot-paths: ['snapshots']
+model-paths: ["models"]
+macro-paths: ["macros"]
+seed-paths: []
 
 models:
-  +materialized: table
+  openfootball:
+    +materialized: view   # staging as views: fast, simple
+    stg:
+      +schema: stg        # logical schema name inside DuckDB

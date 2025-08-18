@@ -1,0 +1,262 @@
+version: 2
+
+models:
+  - name: stg_competitions
+    columns:
+      - name: competition_id
+        tests: [not_null, unique]
+
+  - name: stg_clubs
+    columns:
+      - name: club_id
+        tests: [not_null, unique]
+      - name: domestic_competition_id
+        tests:
+          - relationships:
+              to: ref('stg_competitions')
+              field: competition_id
+
+  - name: stg_players
+    columns:
+      - name: player_id
+        tests: [not_null, unique]
+      - name: current_club_id
+        tests:
+          - relationships:
+              to: ref('stg_clubs_all')
+              field: club_id
+
+  - name: stg_games
+    columns:
+      - name: game_id
+        tests: [not_null, unique]
+      - name: competition_id
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_competitions')
+              field: competition_id
+      - name: home_club_id
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_clubs_all')
+              field: club_id
+      - name: away_club_id
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_clubs_all')
+              field: club_id
+      - name: date
+        tests: [not_null]
+
+  - name: stg_appearances
+    columns:
+      - name: appearance_id
+        tests: [not_null, unique]
+      - name: game_id
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_games')
+              field: game_id
+      - name: player_id
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_players')
+              field: player_id
+      - name: competition_id
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_competitions')
+              field: competition_id
+      - name: minutes_played
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+              max_value: 130
+      - name: goals
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+      - name: assists
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+      - name: yellow_cards
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+      - name: red_cards
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns: [game_id, player_id]
+
+  - name: stg_player_valuations
+    columns:
+      - name: player_id
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_players')
+              field: player_id
+      - name: date
+        tests: [not_null]
+      - name: market_value_in_eur
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+      - name: current_club_id
+        tests:
+          - relationships:
+              to: ref('stg_clubs_all')
+              field: club_id
+      - name: player_club_domestic_competition_id
+        tests:
+          - relationships:
+              to: ref('stg_competitions')
+              field: competition_id
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns: [player_id, date]
+
+  - name: stg_club_games
+    columns:
+      - name: game_id
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_games')
+              field: game_id
+      - name: club_id
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_clubs_all')
+              field: club_id
+      - name: opponent_id
+        tests:
+          - relationships:
+              to: ref('stg_clubs_all')
+              field: club_id
+      - name: own_goals
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+      - name: opponent_goals
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns: [game_id, club_id]
+
+  - name: stg_game_events
+    columns:
+      - name: game_event_id
+        tests: [not_null, unique]
+      - name: game_id
+        tests:
+          - relationships:
+              to: ref('stg_games')
+              field: game_id
+      - name: club_id
+        tests:
+          - relationships:
+              to: ref('stg_clubs_all')
+              field: club_id
+      - name: player_id
+        tests:
+          - relationships:
+              to: ref('stg_players')
+              field: player_id
+      - name: player_in_id
+        tests:
+          - relationships:
+              to: ref('stg_players')
+              field: player_id
+      - name: player_assist_id
+        tests:
+          - relationships:
+              to: ref('stg_players')
+              field: player_id
+      - name: minute
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+              max_value: 120
+      - name: type
+        tests: [not_null]
+
+  - name: stg_game_lineups
+    columns:
+      - name: game_id
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_games')
+              field: game_id
+      - name: club_id
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_clubs_all')
+              field: club_id
+      - name: player_id
+        tests:
+          - relationships:
+              to: ref('stg_players')
+              field: player_id
+      - name: type
+        tests: []
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns: [game_id, club_id, player_id]
+
+  - name: stg_transfers
+    columns:
+      - name: player_id
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_players')
+              field: player_id
+      - name: transfer_date
+        tests: [not_null]
+      - name: from_club_id
+        tests:
+          - relationships:
+              to: ref('stg_clubs_all')
+              field: club_id
+      - name: to_club_id
+        tests:
+          - relationships:
+              to: ref('stg_clubs_all')
+              field: club_id
+
+  - name: stg_clubs_all
+    columns:
+      - name: club_id
+        tests: [not_null, unique]
+      - name: domestic_competition_id
+        tests:
+          - relationships:
+              to: ref('stg_competitions')
+              field: competition_id
+      - name: transfer_fee
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+      - name: market_value_in_eur
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns: [player_id, transfer_date, from_club_id, to_club_id]
