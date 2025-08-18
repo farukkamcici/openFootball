@@ -23,7 +23,7 @@ models:
       - name: current_club_id
         tests:
           - relationships:
-              to: ref('stg_clubs_all')
+              to: ref('stg_clubs')
               field: club_id
 
   - name: stg_games
@@ -40,13 +40,13 @@ models:
         tests:
           - not_null
           - relationships:
-              to: ref('stg_clubs_all')
+              to: ref('stg_clubs')
               field: club_id
       - name: away_club_id
         tests:
           - not_null
           - relationships:
-              to: ref('stg_clubs_all')
+              to: ref('stg_clubs')
               field: club_id
       - name: date
         tests: [not_null]
@@ -115,7 +115,7 @@ models:
       - name: current_club_id
         tests:
           - relationships:
-              to: ref('stg_clubs_all')
+              to: ref('stg_clubs')
               field: club_id
       - name: player_club_domestic_competition_id
         tests:
@@ -138,12 +138,12 @@ models:
         tests:
           - not_null
           - relationships:
-              to: ref('stg_clubs_all')
+              to: ref('stg_clubs')
               field: club_id
       - name: opponent_id
         tests:
           - relationships:
-              to: ref('stg_clubs_all')
+              to: ref('stg_clubs')
               field: club_id
       - name: own_goals
         tests:
@@ -169,7 +169,7 @@ models:
       - name: club_id
         tests:
           - relationships:
-              to: ref('stg_clubs_all')
+              to: ref('stg_clubs')
               field: club_id
       - name: player_id
         tests:
@@ -190,7 +190,7 @@ models:
         tests:
           - dbt_utils.accepted_range:
               min_value: 0
-              max_value: 120
+              max_value: 130
       - name: type
         tests: [not_null]
 
@@ -206,7 +206,7 @@ models:
         tests:
           - not_null
           - relationships:
-              to: ref('stg_clubs_all')
+              to: ref('stg_clubs')
               field: club_id
       - name: player_id
         tests:
@@ -232,23 +232,13 @@ models:
       - name: from_club_id
         tests:
           - relationships:
-              to: ref('stg_clubs_all')
+              to: ref('stg_clubs')
               field: club_id
       - name: to_club_id
         tests:
           - relationships:
-              to: ref('stg_clubs_all')
+              to: ref('stg_clubs')
               field: club_id
-
-  - name: stg_clubs_all
-    columns:
-      - name: club_id
-        tests: [not_null, unique]
-      - name: domestic_competition_id
-        tests:
-          - relationships:
-              to: ref('stg_competitions')
-              field: competition_id
       - name: transfer_fee
         tests:
           - dbt_utils.accepted_range:

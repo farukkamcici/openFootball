@@ -1,0 +1,153 @@
+version: 2
+
+models:
+  # -----------------------------
+  # mart_game_facts TESTS
+  # -----------------------------
+  - name: mart_game_facts
+    description: "Match-level facts: scores, result, points."
+    columns:
+      - name: game_id
+        tests:
+          - not_null
+          - unique
+
+      - name: competition_id
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: "{{ ref('stg_competitions') }}"
+                field: competition_id
+
+      - name: home_club_id
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: "{{ ref('stg_clubs') }}"
+                field: club_id
+
+      - name: away_club_id
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: "{{ ref('stg_clubs') }}"
+                field: club_id
+
+      - name: home_club_goals
+        tests:
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+
+      - name: away_club_goals
+        tests:
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+
+      - name: result
+        tests:
+          - accepted_values:
+              values: ['home_win', 'away_win', 'draw']
+
+      - name: home_points
+        tests:
+          - accepted_values:
+              values: [0, 1, 3]
+
+      - name: away_points
+        tests:
+          - accepted_values:
+              values: [0, 1, 3]
+
+  # -----------------------------
+  # mart_player_season TESTS
+  # -----------------------------
+  - name: mart_player_season
+    description: "Player-season aggregates with per90 + efficiency."
+    columns:
+      - name: player_id
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: "{{ ref('stg_players') }}"
+                field: player_id
+
+      - name: season
+        tests:
+          - not_null
+
+      - name: games_played
+        tests:
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+
+      - name: minutes_played
+        tests:
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+
+      - name: goals
+        tests:
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+
+      - name: assists
+        tests:
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+
+      - name: yellow_cards
+        tests:
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+
+
+      - name: red_cards
+        tests:
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+
+
+      - name: has_600_minutes
+        tests:
+          - accepted_values:
+              values: [true, false]
+
+      - name: goals_per90
+        tests:
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+
+
+      - name: assists_per90
+        tests:
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+
+
+      - name: goal_plus_assist_per90
+        tests:
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+
+
+      - name: efficiency_score
+        description: "Per90 tabanlı verimlilik (örneklem eşiği ile)."
+        tests:
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: -5

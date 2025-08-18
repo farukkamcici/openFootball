@@ -23,3 +23,17 @@
     -- Trim + empty strings → NULL
     nullif(trim(cast({{ col }} AS varchar)), '')
 {%- endmacro %}
+
+{% macro title_case(col) %}
+    ARRAY_TO_STRING(
+        LIST_TRANSFORM(
+            STRING_SPLIT(LOWER(REPLACE({{ col }}, '-', ' ')), ' '),
+            x -> CASE
+                     WHEN LENGTH(x) > 0
+                     THEN UPPER(SUBSTR(x, 1, 1)) || SUBSTR(x, 2)
+                     ELSE x
+                 END
+        ),
+        ' '
+    )
+{% endmacro %}
