@@ -408,3 +408,130 @@ models:
       - dbt_utils.expression_is_true:
           name: mpcs_per90_non_negative
           expression: "(GOALS_PER90 IS NULL OR GOALS_PER90 >= 0) AND (ASSISTS_PER90 IS NULL OR ASSISTS_PER90 >= 0) AND (GOAL_PLUS_ASSIST_PER90 IS NULL OR GOAL_PLUS_ASSIST_PER90 >= 0)"
+  # -----------------------------------------------------------------------------
+  # mart_transferx_player
+  # -----------------------------------------------------------------------------
+  - name: mart_transferx_player
+    description: "Transfer-level table with normalized categories and loan detection."
+    tests:
+      # Every row must map to one unique player-move event.
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - player_id
+            - transfer_date
+            - from_club_id
+            - to_club_id
+
+    columns:
+      # --- identity & core fields ---
+      - name: player_id
+        description: "FK to player."
+        tests:
+          - not_null
+
+      - name: transfer_date
+        description: "Event date."
+        tests:
+          - not_null
+
+      - name: season
+        description: "Season key (July→June)."
+        tests:
+          - not_null
+
+      - name: transfer_category
+        description: "Normalized category."
+        tests:
+          # enforce the exact label set you defined
+          - accepted_values:
+              values: [ 'loan_out','loan_return','free','retired_or_without_club','paid_transfer','other' ]
+
+      - name: is_loan_out
+        description: "Part of loan pair: A→B zero-fee, the outgoing leg."
+        tests:
+          - accepted_values:
+              values: [ true, false ]
+
+      - name: is_loan_return
+        description: "Part of loan pair: B→A zero-fee, the return leg."
+        tests:
+          - accepted_values:
+              values: [ true, false ]
+
+      - name: is_free_transfer
+        description: "Zero transfer fee."
+        tests:
+          - accepted_values:
+              values: [ true, false ]
+
+      - name: is_retired_or_without_club
+        description: "Retired / Without Club flag."
+        tests:
+          - accepted_values:
+              values: [ true, false ]
+  # -----------------------------------------------------------------------------
+  # mart_transferx_club
+  # -----------------------------------------------------------------------------
+  - name: mart_transferx_club
+    description: "Club-season transfer aggregates (spend/income, counts, loan splits)."
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns: [club_id, season]
+
+      - dbt_utils.expression_is_true:
+          name: mart_transferx_club_incoming_free_rate_range
+          expression: "incoming_free_rate IS NULL OR (incoming_free_rate >= 0 AND incoming_free_rate <= 1)"
+      - dbt_utils.expression_is_true:
+          name: mart_transferx_club_incoming_paid_rate_range
+          expression: "incoming_paid_rate IS NULL OR (incoming_paid_rate >= 0 AND incoming_paid_rate <= 1)"
+      - dbt_utils.expression_is_true:
+          name: mart_transferx_club_outgoing_paid_rate_range
+          expression: "outgoing_paid_rate IS NULL OR (outgoing_paid_rate >= 0 AND outgoing_paid_rate <= 1)"
+
+    columns:
+      - name: club_id
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_clubs')
+              field: club_id
+
+      - name: season
+        tests: [not_null]
+
+      - name: incoming_total
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: ">= 0"
+      - name: outgoing_total
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: ">= 0"
+      - name: incoming_free_cnt
+        tests: [{ dbt_utils.expression_is_true: { expression: ">= 0" } }]
+      - name: incoming_paid_cnt
+        tests: [{ dbt_utils.expression_is_true: { expression: ">= 0" } }]
+      - name: incoming_loan_cnt
+        tests: [{ dbt_utils.expression_is_true: { expression: ">= 0" } }]
+      - name: incoming_loan_return_cnt
+        tests: [{ dbt_utils.expression_is_true: { expression: ">= 0" } }]
+      - name: outgoing_free_cnt
+        tests: [{ dbt_utils.expression_is_true: { expression: ">= 0" } }]
+      - name: outgoing_paid_cnt
+        tests: [{ dbt_utils.expression_is_true: { expression: ">= 0" } }]
+      - name: outgoing_loan_cnt
+        tests: [{ dbt_utils.expression_is_true: { expression: ">= 0" } }]
+      - name: outgoing_loan_return_cnt
+        tests: [{ dbt_utils.expression_is_true: { expression: ">= 0" } }]
+      - name: transfer_spend
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: ">= 0"
+      - name: transfer_income
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: ">= 0"
