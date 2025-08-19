@@ -3,6 +3,7 @@
 WITH games_unioned AS (
     SELECT
         season,
+        competition_id,
         home_club_id AS club_id,
         home_club_goals AS goals_for,
         away_club_goals AS goals_against,
@@ -16,6 +17,7 @@ WITH games_unioned AS (
 
     SELECT
         season,
+        competition_id,
         away_club_id AS club_id,
         away_club_goals AS goals_for,
         home_club_goals AS goals_against,
@@ -29,6 +31,7 @@ WITH games_unioned AS (
 club_games AS (
     SELECT
         season,
+        competition_id,
         club_id,
         COUNT(*) AS games_played,
         SUM(goals_for) AS goals_for,
@@ -39,12 +42,13 @@ club_games AS (
         SUM(points) AS points,
         SUM(goals_for) - SUM(goals_against) AS goal_difference
     FROM games_unioned
-    GROUP BY club_id, season
+    GROUP BY club_id, competition_id, season
 ),
 
 clubs_squad AS (
     SELECT
         g.season,
+        g.competition_id,
         a.player_club_id AS club_id,
         COUNT(DISTINCT a.player_id) AS squad_size,
         COALESCE(SUM(a.goals), 0) AS goals,
@@ -53,14 +57,17 @@ clubs_squad AS (
         COALESCE(SUM(a.red_cards), 0) AS red_cards
     FROM {{ ref('stg_appearances') }} AS a
     JOIN {{ ref('stg_games') }} AS g
-      ON a.game_id = g.game_id
-    GROUP BY g.season, a.player_club_id
+    ON a.game_id = g.game_id
+    AND g.competition_id = a.competition_id
+    GROUP BY g.season, a.player_club_id, g.competition_id
 )
 
 SELECT
-    g.season,
     g.club_id,
-    c.name,
+    c.name AS club_name,
+    g.season,
+    g.competition_id,
+    {{ title_case ('co.competition_name') }} as competition_name,
     g.games_played,
     g.wins,
     g.draws,
@@ -78,5 +85,8 @@ FROM club_games AS g
 LEFT JOIN clubs_squad AS s
 ON g.club_id = s.club_id
 AND g.season  = s.season
+AND g.competition_id = s.competition_id
 INNER JOIN {{ ref('stg_clubs') }} c
 ON g.club_id = c.club_id
+LEFT JOIN {{ ref('stg_competitions') }} co
+ON g.competition_id = co.competition_id

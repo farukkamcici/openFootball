@@ -189,3 +189,222 @@ models:
       - dbt_utils.expression_is_true:
           name: mart_club_season_non_negative_metrics
           expression: "GAMES_PLAYED >= 0 AND WINS >= 0 AND DRAWS >= 0 AND LOSSES >= 0 AND POINTS >= 0 AND GOALS_FOR >= 0 AND GOALS_AGAINST >= 0 AND SQUAD_SIZE >= 0 AND SQUAD_GOALS >= 0 AND SQUAD_ASSISTS >= 0 AND SQUAD_YELLOW_CARDS >= 0 AND SQUAD_RED_CARDS >= 0"
+  # -----------------------------
+  # mart_competition_club_season TESTS
+  # -----------------------------
+  - name: mart_competition_club_season
+    description: "Club × Competition × Season aggregates: W/D/L, points, GF/GA, GD, squad stats."
+    columns:
+      - name: competition_id
+        description: "Competition ID."
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_competitions')
+              field: competition_id
+
+      - name: season
+        description: "Season label."
+        tests:
+          - not_null
+
+      - name: club_id
+        description: "Club ID."
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_clubs')
+              field: club_id
+
+      - name: competition_name
+        description: "Competition name (from stg_competitions)."
+        tests:
+          - not_null
+
+      - name: club_name
+        description: "Club name (from stg_clubs)."
+        tests:
+          - not_null
+
+      - name: games_played
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+
+      - name: wins
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+
+      - name: draws
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+
+      - name: losses
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+
+      - name: points
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+
+      - name: goals_for
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+
+      - name: goals_against
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+
+      - name: goal_difference
+        tests:
+          - not_null
+
+      - name: squad_size
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+
+      - name: squad_goals
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+
+      - name: squad_assists
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+
+      - name: squad_yellow_cards
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+
+      - name: squad_red_cards
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+
+    tests:
+      # Uniqueness per competition × season × club
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns: [ 'competition_id', 'season', 'club_id' ]
+
+      # Identities
+      - dbt_utils.expression_is_true:
+          name: mart_comp_season_games_identity
+          expression: "GAMES_PLAYED = (WINS + DRAWS + LOSSES)"
+
+      - dbt_utils.expression_is_true:
+          name: mart_comp_season_gd_identity
+          expression: "GOAL_DIFFERENCE = (GOALS_FOR - GOALS_AGAINST)"
+
+      # Points rule (set WARN to be safe for cups)
+      - dbt_utils.expression_is_true:
+          name: mart_comp_season_points_rule
+          expression: "POINTS = (WINS * 3) + (DRAWS * 1)"
+          config:
+            severity: warn
+  # -----------------------------
+  # mart_competition_player_season TESTS
+  # -----------------------------
+  - name: mart_competition_player_season
+    description: "Player × Competition × Season aggregates with per90 and season-end valuation."
+    columns:
+      - name: competition_id
+        description: "Competition ID."
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_competitions')
+              field: competition_id
+
+      - name: season
+        description: "Season label."
+        tests:
+          - not_null
+
+      - name: player_id
+        description: "Player ID."
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_players')
+              field: player_id
+
+      - name: competition_name
+        description: "Competition name (from stg_competitions)."
+        tests:
+          - not_null
+
+      - name: games_played
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+
+      - name: minutes_played
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+
+      - name: goals
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+
+      - name: assists
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+
+      - name: yellow_cards
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+
+      - name: red_cards
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+
+      - name: has_180_minutes
+        tests:
+          - accepted_values:
+              values: [ true, false ]
+
+      - name: total_goals_and_assists
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+
+      - name: season_last_value_eur
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+
+    tests:
+      # Grain: unique per competition × season × player
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns: [ 'competition_id','season','player_id' ]
+
+      # Identity: total_goals_and_assists = goals + assists
+      - dbt_utils.expression_is_true:
+          name: mpcs_total_ga_identity
+          expression: "TOTAL_GOALS_AND_ASSISTS = (GOALS + ASSISTS)"
+
+      # Per90 null policy: per90 metrics must be NULL when minutes < 180, present otherwise
+      - dbt_utils.expression_is_true:
+          name: mpcs_per90_null_rule
+          expression: "(HAS_180_MINUTES = TRUE AND GOALS_PER90 IS NOT NULL AND ASSISTS_PER90 IS NOT NULL AND GOAL_PLUS_ASSIST_PER90 IS NOT NULL) OR (HAS_180_MINUTES = FALSE AND GOALS_PER90 IS NULL AND ASSISTS_PER90 IS NULL AND GOAL_PLUS_ASSIST_PER90 IS NULL)"
+
+      # Per90 non-negative when present
+      - dbt_utils.expression_is_true:
+          name: mpcs_per90_non_negative
+          expression: "(GOALS_PER90 IS NULL OR GOALS_PER90 >= 0) AND (ASSISTS_PER90 IS NULL OR ASSISTS_PER90 >= 0) AND (GOAL_PLUS_ASSIST_PER90 IS NULL OR GOAL_PLUS_ASSIST_PER90 >= 0)"
