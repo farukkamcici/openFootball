@@ -16,37 +16,32 @@ models:
         tests:
           - not_null
           - relationships:
-              arguments:
-                to: "{{ ref('stg_competitions') }}"
-                field: competition_id
+              to: ref('stg_competitions')
+              field: competition_id
 
       - name: home_club_id
         tests:
           - not_null
           - relationships:
-              arguments:
-                to: "{{ ref('stg_clubs') }}"
-                field: club_id
+              to: ref('stg_clubs')
+              field: club_id
 
       - name: away_club_id
         tests:
           - not_null
           - relationships:
-              arguments:
-                to: "{{ ref('stg_clubs') }}"
-                field: club_id
+              to: ref('stg_clubs')
+              field: club_id
 
       - name: home_club_goals
         tests:
           - dbt_utils.accepted_range:
-              arguments:
-                min_value: 0
+              min_value: 0
 
       - name: away_club_goals
         tests:
           - dbt_utils.accepted_range:
-              arguments:
-                min_value: 0
+              min_value: 0
 
       - name: result
         tests:
@@ -73,9 +68,8 @@ models:
         tests:
           - not_null
           - relationships:
-              arguments:
-                to: "{{ ref('stg_players') }}"
-                field: player_id
+              to: ref('stg_players')
+              field: player_id
 
       - name: season
         tests:
@@ -84,40 +78,32 @@ models:
       - name: games_played
         tests:
           - dbt_utils.accepted_range:
-              arguments:
-                min_value: 0
+              min_value: 0
 
       - name: minutes_played
         tests:
           - dbt_utils.accepted_range:
-              arguments:
-                min_value: 0
+              min_value: 0
 
       - name: goals
         tests:
           - dbt_utils.accepted_range:
-              arguments:
-                min_value: 0
+              min_value: 0
 
       - name: assists
         tests:
           - dbt_utils.accepted_range:
-              arguments:
-                min_value: 0
+              min_value: 0
 
       - name: yellow_cards
         tests:
           - dbt_utils.accepted_range:
-              arguments:
-                min_value: 0
-
+              min_value: 0
 
       - name: red_cards
         tests:
           - dbt_utils.accepted_range:
-              arguments:
-                min_value: 0
-
+              min_value: 0
 
       - name: has_600_minutes
         tests:
@@ -127,27 +113,79 @@ models:
       - name: goals_per90
         tests:
           - dbt_utils.accepted_range:
-              arguments:
-                min_value: 0
-
+              min_value: 0
 
       - name: assists_per90
         tests:
           - dbt_utils.accepted_range:
-              arguments:
-                min_value: 0
-
+              min_value: 0
 
       - name: goal_plus_assist_per90
         tests:
           - dbt_utils.accepted_range:
-              arguments:
-                min_value: 0
-
+              min_value: 0
 
       - name: efficiency_score
-        description: "Per90 tabanlı verimlilik (örneklem eşiği ile)."
+        description: "Efficiency score based on per90 with minutes threshold."
         tests:
           - dbt_utils.accepted_range:
-              arguments:
-                min_value: -5
+              min_value: -5
+
+  # -----------------------------
+  # mart_club_season TESTS
+  # -----------------------------
+  - name: mart_club_season
+    description: "Club × Season level aggregates (match results + squad stats)."
+    columns:
+      - name: club_id
+        description: "Club ID."
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_clubs')
+              field: club_id
+
+      - name: season
+        description: "Season ID."
+        tests:
+          - not_null
+
+      - name: name
+        description: "Club name (from stg_clubs)."
+        tests:
+          - not_null
+
+      - name: games_played
+        description: "Total number of games in the season."
+        tests:
+          - not_null
+
+      - name: points
+        description: "Total points."
+        tests:
+          - not_null
+
+    tests:
+      # PK-like check: (club_id, season) must be unique
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns: ['club_id', 'season']
+
+      # Games played must equal sum of W/D/L
+      - dbt_utils.expression_is_true:
+          name: mart_club_season_match_count_rule
+          expression: "GAMES_PLAYED = (WINS + DRAWS + LOSSES)"
+
+      # Points rule: 3*W + 1*D
+      - dbt_utils.expression_is_true:
+          name: mart_club_season_points_rule
+          expression: "POINTS = (WINS * 3) + (DRAWS * 1)"
+
+      # Goal difference must equal GF - GA
+      - dbt_utils.expression_is_true:
+          name: mart_club_season_goal_diff_rule
+          expression: "GOAL_DIFFERENCE = (GOALS_FOR - GOALS_AGAINST)"
+
+      # All aggregate metrics must be non-negative
+      - dbt_utils.expression_is_true:
+          name: mart_club_season_non_negative_metrics
+          expression: "GAMES_PLAYED >= 0 AND WINS >= 0 AND DRAWS >= 0 AND LOSSES >= 0 AND POINTS >= 0 AND GOALS_FOR >= 0 AND GOALS_AGAINST >= 0 AND SQUAD_SIZE >= 0 AND SQUAD_GOALS >= 0 AND SQUAD_ASSISTS >= 0 AND SQUAD_YELLOW_CARDS >= 0 AND SQUAD_RED_CARDS >= 0"
