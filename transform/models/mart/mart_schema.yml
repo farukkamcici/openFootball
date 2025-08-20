@@ -651,3 +651,156 @@ models:
           column_name: club_formation
       - dbt_utils.expression_is_true:
           expression: "games_played = (wins + draws + losses)"
+  # -----------------------------------------------------------------------------
+  # mart_club_formation_season
+  # -----------------------------------------------------------------------------
+  - name: mart_club_formation_season
+    description: "Club × Season × Formation performance: games, W/D/L, points per game, win rate."
+    columns:
+      - name: competition_id
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_competitions')
+              field: competition_id
+
+      - name: season
+        tests:
+          - not_null
+
+      - name: club_id
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_clubs')
+              field: club_id
+
+      - name: club_formation
+        tests:
+          - not_null
+
+      - name: games_played
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: "{{ column_name }} >= 0"
+
+      - name: wins
+        tests:
+          - dbt_utils.expression_is_true:
+              expression: "{{ column_name }} >= 0"
+
+      - name: draws
+        tests:
+          - dbt_utils.expression_is_true:
+              expression: "{{ column_name }} >= 0"
+
+      - name: losses
+        tests:
+          - dbt_utils.expression_is_true:
+              expression: "{{ column_name }} >= 0"
+
+      - name: goals_for
+        tests:
+          - dbt_utils.expression_is_true:
+              expression: "{{ column_name }} >= 0"
+
+      - name: goals_against
+        tests:
+          - dbt_utils.expression_is_true:
+              expression: "{{ column_name }} >= 0"
+
+      - name: ppg
+        tests:
+          - dbt_utils.expression_is_true:
+              expression: "{{ column_name }} >= 0"
+          - dbt_utils.expression_is_true:
+              expression: "{{ column_name }} <= 3"
+
+      - name: win_percentage
+        tests:
+          - dbt_utils.expression_is_true:
+              expression: "{{ column_name }} >= 0"
+          - dbt_utils.expression_is_true:
+              expression: "{{ column_name }} <= 100"
+
+    tests:
+      # Uniqueness per competition × season × club × formation
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns: [ competition_id, season, club_id, club_formation ]
+
+      # Games played must equal sum of W/D/L
+      - dbt_utils.expression_is_true:
+          name: mart_club_form_season_match_count_rule
+          expression: "games_played = (wins + draws + losses)"
+  # -----------------------------
+  # mart_player_valuation_season
+  # -----------------------------
+  - name: mart_player_valuation_season
+    description: "Player × Season valuation summary: start/end values, Δ, %Δ, peak, trough."
+    columns:
+      - name: player_id
+        description: "Player ID."
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_players')
+              field: player_id
+
+      - name: season
+        description: "Season (July → June)."
+        tests:
+          - not_null
+
+      - name: first_market_value
+        description: "Market value at the start of the season."
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: "{{ column_name }} >= 0"
+
+      - name: last_market_value
+        description: "Market value at the end of the season."
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: "{{ column_name }} >= 0"
+
+      - name: min_market_value
+        description: "Lowest market value in the season."
+        tests:
+          - dbt_utils.expression_is_true:
+              expression: "{{ column_name }} >= 0"
+
+      - name: max_market_value
+        description: "Highest market value in the season."
+        tests:
+          - dbt_utils.expression_is_true:
+              expression: "{{ column_name }} >= 0"
+
+      - name: value_change_amount
+        description: "Absolute change between start and end of season."
+        tests:
+          - not_null
+
+      - name: value_change_percentage
+        description: "Percentage change from start to end of season."
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: -100
+              max_value: 100000
+
+    tests:
+      # Grain: one row per player × season
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns: [ player_id, season ]
+
+      # Identity: max must be >= min
+      - dbt_utils.expression_is_true:
+          name: mart_pvs_min_max_rule
+          expression: "max_market_value >= min_market_value"
+
+      # Identity: value_change_amount = last - first
+      - dbt_utils.expression_is_true:
+          name: mart_pvs_delta_rule
+          expression: "value_change_amount = (last_market_value - first_market_value)"
