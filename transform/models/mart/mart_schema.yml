@@ -409,9 +409,9 @@ models:
           name: mpcs_per90_non_negative
           expression: "(GOALS_PER90 IS NULL OR GOALS_PER90 >= 0) AND (ASSISTS_PER90 IS NULL OR ASSISTS_PER90 >= 0) AND (GOAL_PLUS_ASSIST_PER90 IS NULL OR GOAL_PLUS_ASSIST_PER90 >= 0)"
   # -----------------------------------------------------------------------------
-  # mart_transferx_player
+  # mart_transfer_player
   # -----------------------------------------------------------------------------
-  - name: mart_transferx_player
+  - name: mart_transfer_player
     description: "Transfer-level table with normalized categories and loan detection."
     tests:
       # Every row must map to one unique player-move event.
@@ -470,22 +470,22 @@ models:
           - accepted_values:
               values: [ true, false ]
   # -----------------------------------------------------------------------------
-  # mart_transferx_club
+  # mart_transfer_club
   # -----------------------------------------------------------------------------
-  - name: mart_transferx_club
+  - name: mart_transfer_club
     description: "Club-season transfer aggregates (spend/income, counts, loan splits)."
     tests:
       - dbt_utils.unique_combination_of_columns:
           combination_of_columns: [club_id, season]
 
       - dbt_utils.expression_is_true:
-          name: mart_transferx_club_incoming_free_rate_range
+          name: mart_transfer_club_incoming_free_rate_range
           expression: "incoming_free_rate IS NULL OR (incoming_free_rate >= 0 AND incoming_free_rate <= 1)"
       - dbt_utils.expression_is_true:
-          name: mart_transferx_club_incoming_paid_rate_range
+          name: mart_transfer_club_incoming_paid_rate_range
           expression: "incoming_paid_rate IS NULL OR (incoming_paid_rate >= 0 AND incoming_paid_rate <= 1)"
       - dbt_utils.expression_is_true:
-          name: mart_transferx_club_outgoing_paid_rate_range
+          name: mart_transfer_club_outgoing_paid_rate_range
           expression: "outgoing_paid_rate IS NULL OR (outgoing_paid_rate >= 0 AND outgoing_paid_rate <= 1)"
 
     columns:
@@ -600,9 +600,9 @@ models:
       - dbt_utils.expression_is_true:
           expression: "games_played = (wins + draws + losses)"
   # -----------------------------------------------------------------------------
-  # mart_competition_performance_history
+  # mart_formation_history_performance
   # -----------------------------------------------------------------------------
-  - name: mart_formation_performance_history
+  - name: mart_formation_history_performance
     description: "Global formation performance across all seasons."
     columns:
       - name: club_formation
@@ -936,9 +936,9 @@ models:
       - dbt_utils.unique_combination_of_columns:
           combination_of_columns: [ manager_name, club_formation ]
   # -----------------------------
-  # mart_player_performance_value_corr
+  # mart_player_value_performance_corr
   # -----------------------------
-  - name: mart_player_performance_value_corr
+  - name: mart_player_value_performance_corr
     columns:
       - name: player_id
         tests: [ not_null ]
