@@ -935,3 +935,71 @@ models:
     tests:
       - dbt_utils.unique_combination_of_columns:
           combination_of_columns: [ manager_name, club_formation ]
+  # -----------------------------
+  # mart_player_performance_value_corr
+  # -----------------------------
+  - name: mart_player_performance_value_corr
+    columns:
+      - name: player_id
+        tests: [ not_null ]
+      - name: season
+        tests: [ not_null ]
+      - name: minutes_played
+        tests:
+          - dbt_utils.expression_is_true:
+              arguments:
+                expression: "{{ column_name }} >= 0"
+      - name: goals_per90
+        tests:
+          - dbt_utils.expression_is_true:
+              arguments:
+                expression: "{{ column_name }} >= 0"
+      - name: assists_per90
+        tests:
+          - dbt_utils.expression_is_true:
+              arguments:
+                expression: "{{ column_name }} >= 0"
+      - name: goal_plus_assist_per90
+        tests:
+          - dbt_utils.expression_is_true:
+              arguments:
+                expression: "{{ column_name }} >= 0"
+      - name: first_market_value
+        tests:
+          - dbt_utils.expression_is_true:
+              arguments:
+                expression: "{{ column_name }} >= 0"
+      - name: last_market_value
+        tests:
+          - dbt_utils.expression_is_true:
+              arguments:
+                expression: "{{ column_name }} >= 0"
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns: [ player_id, season ]
+  # -----------------------------
+  # mart_transfer_age_fee_profile
+  # -----------------------------
+  - name: mart_transfer_age_fee_profile
+    description: "Transfer activity summarized by player age buckets."
+    columns:
+      - name: age_bucket
+        description: "Age category of players at transfer date (15-19, 20-24, 25-29, 30-34, 35+)"
+        tests:
+          - not_null
+
+      - name: transfer_count
+        description: "Number of transfers in this age bucket"
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              arguments:
+                expression: "{{ column_name }} >= 0"
+
+      - name: avg_transfer_fee
+        description: "Average transfer fee in EUR for this age bucket"
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              arguments:
+                expression: "{{ column_name }} >= 0"
