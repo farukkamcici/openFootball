@@ -535,3 +535,119 @@ models:
           - not_null
           - dbt_utils.expression_is_true:
               expression: ">= 0"
+  # -----------------------------------------------------------------------------
+  # mart_competition_formation_season
+  # -----------------------------------------------------------------------------
+  - name: mart_competition_formation_season
+    description: "League × season × formation performance: games, W/D/L, points per game, win rate."
+    columns:
+      - name: competition_id
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_competitions')
+              field: competition_id
+      - name: season
+        tests:
+          - not_null
+      - name: club_formation
+        tests:
+          - not_null
+      - name: games_played
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: "{{ column_name }} >= 0"
+      - name: wins
+        tests:
+          - dbt_utils.expression_is_true:
+              expression: "{{ column_name }} >= 0"
+      - name: draws
+        tests:
+          - dbt_utils.expression_is_true:
+              expression: "{{ column_name }} >= 0"
+      - name: losses
+        tests:
+          - dbt_utils.expression_is_true:
+              expression: "{{ column_name }} >= 0"
+      - name: goals_for
+        tests:
+          - dbt_utils.expression_is_true:
+              expression: "{{ column_name }} >= 0"
+      - name: goals_against
+        tests:
+          - dbt_utils.expression_is_true:
+              expression: "{{ column_name }} >= 0"
+      - name: ppg
+        tests:
+          - dbt_utils.expression_is_true:
+              expression: "{{ column_name }} >= 0"
+          - dbt_utils.expression_is_true:
+              expression: "{{ column_name }} <= 3"
+      - name: win_percentage
+        tests:
+          - dbt_utils.expression_is_true:
+              expression: "{{ column_name }} >= 0"
+          - dbt_utils.expression_is_true:
+              expression: "{{ column_name }} <= 100"
+
+    tests:
+      # UNIQUE grain
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns: [ competition_id, season, club_formation ]
+
+      # Model-level rules (DİKKAT: kolon adını düz yaz)
+      - dbt_utils.expression_is_true:
+          expression: "games_played = (wins + draws + losses)"
+  # -----------------------------------------------------------------------------
+  # mart_competition_performance_history
+  # -----------------------------------------------------------------------------
+  - name: mart_formation_performance_history
+    description: "Global formation performance across all seasons."
+    columns:
+      - name: club_formation
+        tests:
+          - not_null
+      - name: games_played
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: "{{ column_name }} >= 0"
+      - name: wins
+        tests:
+          - dbt_utils.expression_is_true:
+              expression: "{{ column_name }} >= 0"
+      - name: draws
+        tests:
+          - dbt_utils.expression_is_true:
+              expression: "{{ column_name }} >= 0"
+      - name: losses
+        tests:
+          - dbt_utils.expression_is_true:
+              expression: "{{ column_name }} >= 0"
+      - name: goals_for
+        tests:
+          - dbt_utils.expression_is_true:
+              expression: "{{ column_name }} >= 0"
+      - name: goals_against
+        tests:
+          - dbt_utils.expression_is_true:
+              expression: "{{ column_name }} >= 0"
+      - name: ppg
+        tests:
+          - dbt_utils.expression_is_true:
+              expression: "{{ column_name }} >= 0"
+          - dbt_utils.expression_is_true:
+              expression: "{{ column_name }} <= 3"
+      - name: win_percentage
+        tests:
+          - dbt_utils.expression_is_true:
+              expression: "{{ column_name }} >= 0"
+          - dbt_utils.expression_is_true:
+              expression: "{{ column_name }} <= 100"
+
+    tests:
+      - unique:
+          column_name: club_formation
+      - dbt_utils.expression_is_true:
+          expression: "games_played = (wins + draws + losses)"
