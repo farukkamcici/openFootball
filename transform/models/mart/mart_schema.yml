@@ -877,3 +877,61 @@ models:
     tests:
       - dbt_utils.unique_combination_of_columns:
           combination_of_columns: [ season, manager_name ]
+  # -----------------------------
+  # mart_manager_formation_performance
+  # -----------------------------
+  - name: mart_manager_formation_performance
+    description: "Manager × formation performance summary (games, goals, points, PPG, win rate)."
+    columns:
+      - name: manager_name
+        description: "Manager full name"
+        tests:
+          - not_null
+
+      - name: club_formation
+        description: "Tactical formation string (e.g. 4-3-3)"
+        tests:
+          - not_null
+
+      - name: games_played
+        description: "Total games managed with this formation"
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: "{{ column_name }} >= 0"
+
+      - name: avg_goals_for
+        description: "Average goals scored per game with this formation"
+        tests:
+          - dbt_utils.expression_is_true:
+              expression: "{{ column_name }} >= 0"
+
+      - name: avg_goals_against
+        description: "Average goals conceded per game with this formation"
+        tests:
+          - dbt_utils.expression_is_true:
+              expression: "{{ column_name }} >= 0"
+
+      - name: points
+        description: "Total points with this formation (3W/1D/0L)"
+        tests:
+          - dbt_utils.expression_is_true:
+              expression: "{{ column_name }} >= 0"
+
+      - name: ppg
+        description: "Points per game with this formation"
+        tests:
+          - dbt_utils.expression_is_true:
+              expression: "{{ column_name }} >= 0"
+
+      - name: win_rate
+        description: "Win ratio (wins / games_played)"
+        tests:
+          - dbt_utils.expression_is_true:
+              expression: "{{ column_name }} >= 0"
+          - dbt_utils.expression_is_true:
+              expression: "{{ column_name }} <= 1"
+
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns: [ manager_name, club_formation ]

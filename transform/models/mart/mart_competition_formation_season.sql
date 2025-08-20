@@ -6,7 +6,6 @@ WITH games_unioned AS (
         competition_id,
         season,
         home_club_formation AS club_formation,
-        home_club_position AS club_position,
         home_club_goals AS goals_for,
         away_club_goals AS goals_against,
         CASE
@@ -29,7 +28,6 @@ WITH games_unioned AS (
         competition_id,
         season,
         away_club_formation AS club_formation,
-        away_club_position AS club_position,
         away_club_goals AS goals_for,
         home_club_goals AS goals_against,
         CASE
@@ -57,7 +55,6 @@ WITH games_unioned AS (
         ROUND(AVG(goals_for), 2) AS avg_goals_for,
         ROUND(AVG(goals_against), 2) AS avg_goals_against,
         ROUND(AVG(points), 2) AS ppg,
-        ROUND(AVG(club_position), 2) AS avg_position,
         SUM(CASE WHEN result = 'win' THEN 1 ELSE 0 END) AS wins,
         SUM(CASE WHEN result = 'draw' THEN 1 ELSE 0 END) AS draws,
         SUM(CASE WHEN result = 'loss' THEN 1 ELSE 0 END) AS losses,

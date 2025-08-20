@@ -5,7 +5,7 @@ Concise descriptions of each `mart_*` table and its key fields.
 ## mart_club_formation_season
 - Purpose: Club performance by season and formation.
 - Keys: Composite (`competition_id`, `season`, `club_id`, `club_formation`).
-- Columns: `club_name`, `games_played`, `goals_for`, `goals_against`, `avg_goals_for`, `avg_goals_against`, `ppg`, `avg_position`, `wins`, `draws`, `losses`, `win_percentage`, `competition_name`.
+- Columns: `club_name`, `games_played`, `goals_for`, `goals_against`, `avg_goals_for`, `avg_goals_against`, `ppg`, `wins`, `draws`, `losses`, `win_percentage`, `competition_name`.
 
 ## mart_club_season
 - Purpose: Club seasonal summary across all competitions.
@@ -20,7 +20,7 @@ Concise descriptions of each `mart_*` table and its key fields.
 ## mart_competition_formation_season
 - Purpose: Formation performance by competition and season.
 - Keys: Composite (`competition_id`, `season`, `club_formation`).
-- Columns: `games_played`, `goals_for`, `goals_against`, `avg_goals_for`, `avg_goals_against`, `ppg`, `avg_position`, `wins`, `draws`, `losses`, `win_percentage`, `competition_name`.
+- Columns: `games_played`, `goals_for`, `goals_against`, `avg_goals_for`, `avg_goals_against`, `ppg`, `wins`, `draws`, `losses`, `win_percentage`, `competition_name`.
 
 ## mart_competition_player_season
 - Purpose: Player seasonal performance within a competition.
@@ -40,7 +40,7 @@ Concise descriptions of each `mart_*` table and its key fields.
 ## mart_formation_performance_history
 - Purpose: Formation performance across all games (global history).
 - Key: `club_formation`.
-- Columns: `games_played`, `goals_for`, `goals_against`, `avg_goals_for`, `avg_goals_against`, `ppg`, `avg_position`, `wins`, `draws`, `losses`, `win_percentage`.
+- Columns: `games_played`, `goals_for`, `goals_against`, `avg_goals_for`, `avg_goals_against`, `ppg`, `wins`, `draws`, `losses`, `win_percentage`.
 
 ## mart_game_facts
 - Purpose: Game-level facts and derived points.
