@@ -857,3 +857,23 @@ models:
         tests:
           - dbt_utils.expression_is_true:
               expression: "{{ column_name }} = (total_goals + total_assists)"
+  # -----------------------------
+  # mart_manager_performance
+  # -----------------------------
+  - name: mart_manager_performance
+    columns:
+      - name: season
+        tests: [ not_null ]
+      - name: manager_name
+        tests: [ not_null ]
+      - name: games_played
+        tests:
+          - dbt_utils.expression_is_true:
+              expression: "{{ column_name }} >= 0"
+      - name: points
+        tests:
+          - dbt_utils.expression_is_true:
+              expression: "{{ column_name }} >= 0"
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns: [ season, manager_name ]
