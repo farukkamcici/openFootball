@@ -804,3 +804,56 @@ models:
       - dbt_utils.expression_is_true:
           name: mart_pvs_delta_rule
           expression: "value_change_amount = (last_market_value - first_market_value)"
+  # -----------------------------
+  # mart_player_career_summary
+  # -----------------------------
+  - name: mart_player_career_summary
+    description: "Player career summary with lifetime stats and metadata."
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns: [ player_id ]
+
+      # Per-game ratios must be NULL or >= 0
+      - dbt_utils.expression_is_true:
+          name: gpg_non_negative
+          expression: "gpg IS NULL OR gpg >= 0"
+      - dbt_utils.expression_is_true:
+          name: apg_non_negative
+          expression: "apg IS NULL OR apg >= 0"
+      - dbt_utils.expression_is_true:
+          name: tgc_pg_non_negative
+          expression: "total_goal_contributions_pg IS NULL OR total_goal_contributions_pg >= 0"
+
+    columns:
+      - name: player_id
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_players')
+              field: player_id
+
+      - name: total_matches
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: "{{ column_name }} >= 0"
+
+      - name: total_minutes
+        tests:
+          - dbt_utils.expression_is_true:
+              expression: "{{ column_name }} >= 0"
+
+      - name: total_goals
+        tests:
+          - dbt_utils.expression_is_true:
+              expression: "{{ column_name }} >= 0"
+
+      - name: total_assists
+        tests:
+          - dbt_utils.expression_is_true:
+              expression: "{{ column_name }} >= 0"
+
+      - name: total_goal_contributions
+        tests:
+          - dbt_utils.expression_is_true:
+              expression: "{{ column_name }} = (total_goals + total_assists)"
