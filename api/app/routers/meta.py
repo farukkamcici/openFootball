@@ -1,0 +1,41 @@
+from fastapi import APIRouter
+from typing import List
+from pydantic import BaseModel
+from ..db import get_conn
+
+router = APIRouter()
+
+
+class SeasonOut(BaseModel):
+    season: int
+
+
+class CompetitionOut(BaseModel):
+    competition_id: str
+    competition_name: str
+
+
+@router.get("/seasons", response_model=List[SeasonOut])
+def seasons():
+    """Return all available seasons."""
+    con = get_conn()
+    q = """
+    SELECT DISTINCT season
+    FROM mart_competition_club_season
+    ORDER BY season DESC
+    """
+    rows = con.execute(q).fetchall()
+    return [SeasonOut(season=r[0]) for r in rows]
+
+
+@router.get("/competitions", response_model=List[CompetitionOut])
+def competitions():
+    """Return all available competitions."""
+    con = get_conn()
+    q = """
+    SELECT DISTINCT competition_id, competition_name
+    FROM mart_competition_club_season
+    ORDER BY competition_id
+    """
+    rows = con.execute(q).fetchall()
+    return [CompetitionOut(competition_id=r[0], competition_name=r[1]) for r in rows]
