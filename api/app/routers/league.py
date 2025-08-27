@@ -1,7 +1,7 @@
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Query, HTTPException, status
 from typing import List
 from pydantic import BaseModel
-from app.db import get_conn
+from ..db import get_conn
 
 router = APIRouter()
 
@@ -69,4 +69,10 @@ def league_stats(competition_id: str, season: str):
     WHERE competition_id = ? AND season = ?
     """
     r = con.execute(q, [competition_id, season]).fetchone()
+    # If no clubs found for given filters, return 404
+    if r is None or (r[0] is not None and isinstance(r[0], int) and r[0] == 0):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="League stats not found for given competition and season",
+        )
     return LeagueStats(club_count=r[0], avg_points=r[1], avg_gd=r[2], total_goals=r[3])

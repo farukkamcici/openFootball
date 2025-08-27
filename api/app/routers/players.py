@@ -1,5 +1,5 @@
-from fastapi import APIRouter
-from typing import List
+from fastapi import APIRouter, HTTPException, status, Query
+from typing import List, Optional, Literal, Annotated
 from pydantic import BaseModel
 from ..db import get_conn
 
@@ -11,10 +11,15 @@ class PlayerTop(BaseModel):
     player_name: str
     games_played: int
     minutes_played: int
-    goals_per90: float
-    assists_per90: float
-    goal_plus_assist_per90: float
-    efficiency_score: float
+    goals: int
+    assists: int
+    total_goals_and_assists: int
+    yellow_cards: int
+    red_cards: int
+    goals_per90: Optional[float] = None
+    assists_per90: Optional[float] = None
+    goal_plus_assist_per90: Optional[float] = None
+    efficiency_score: Optional[float] = None
 
 
 class PlayerSeason(BaseModel):
@@ -25,10 +30,10 @@ class PlayerSeason(BaseModel):
     assists: int
     yellow_cards: int
     red_cards: int
-    goals_per90: float
-    assists_per90: float
-    goal_plus_assist_per90: float
-    efficiency_score: float
+    goals_per90: Optional[float] = None
+    assists_per90: Optional[float] = None
+    goal_plus_assist_per90: Optional[float] = None
+    efficiency_score: Optional[float] = None
     season_last_value_eur: int
 
 
@@ -42,19 +47,29 @@ class PlayerValuationSeason(BaseModel):
 
 
 @router.get("/players/top", response_model=List[PlayerTop])
-def players_top(season: str, metric: str, min_minutes: int = 600, limit: int = 50):
-    """Return top players by given metric and season."""
-    allowed = [
+def players_top(
+    season: str,
+    metric: Literal[
+        "minutes_played",
+        "goals",
+        "assists",
+        "total_goals_and_assists",
+        "yellow_cards",
+        "red_cards",
         "goals_per90",
         "assists_per90",
         "goal_plus_assist_per90",
         "efficiency_score",
-    ]
-    if metric not in allowed:
-        raise ValueError("Invalid metric")
+    ],
+    min_minutes: Annotated[int, Query(ge=0)] = 600,
+    limit: Annotated[int, Query(ge=1, le=500)] = 50,
+):
+    """Return top players by given metric and season."""
     con = get_conn()
     q = f"""
     SELECT player_id, player_name, games_played, minutes_played,
+           goals, assists, (goals + assists) AS total_goals_and_assists,
+           yellow_cards, red_cards,
            goals_per90, assists_per90, goal_plus_assist_per90, efficiency_score
     FROM mart_player_season
     WHERE season = ? AND minutes_played >= ?
@@ -68,10 +83,15 @@ def players_top(season: str, metric: str, min_minutes: int = 600, limit: int = 5
             player_name=r[1],
             games_played=r[2],
             minutes_played=r[3],
-            goals_per90=r[4],
-            assists_per90=r[5],
-            goal_plus_assist_per90=r[6],
-            efficiency_score=r[7],
+            goals=r[4],
+            assists=r[5],
+            total_goals_and_assists=r[6],
+            yellow_cards=r[7],
+            red_cards=r[8],
+            goals_per90=r[9],
+            assists_per90=r[10],
+            goal_plus_assist_per90=r[11],
+            efficiency_score=r[12],
         )
         for r in rows
     ]
@@ -90,6 +110,11 @@ def player_season(player_id: int, season: str):
     WHERE player_id = ? AND season = ?
     """
     r = con.execute(q, [player_id, season]).fetchone()
+    if r is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Player season not found",
+        )
     return PlayerSeason(
         player_name=r[0],
         games_played=r[1],
@@ -119,6 +144,11 @@ def valuation_season(player_id: int, season: str):
     WHERE player_id = ? AND season = ?
     """
     r = con.execute(q, [player_id, season]).fetchone()
+    if r is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Player valuation season not found",
+        )
     return PlayerValuationSeason(
         first_market_value=r[0],
         last_market_value=r[1],

@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException, status
 from typing import List
 from pydantic import BaseModel
 from ..db import get_conn
@@ -60,6 +60,11 @@ def club_season(club_id: int, season: str):
     WHERE club_id = ? AND season = ?
     """
     r = con.execute(q, [club_id, season]).fetchone()
+    if r is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Club season not found",
+        )
     return ClubSeason(
         club_name=r[0],
         games_played=r[1],

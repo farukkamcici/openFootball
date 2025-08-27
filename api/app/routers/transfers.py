@@ -1,13 +1,14 @@
-from fastapi import APIRouter
-from typing import List
+from fastapi import APIRouter, HTTPException, status
+from typing import List, Optional
 from pydantic import BaseModel
 from ..db import get_conn
+from datetime import date
 
 router = APIRouter()
 
 
 class TransferPlayer(BaseModel):
-    transfer_date: str
+    transfer_date: date
     season: str
     from_club_id: int
     from_club_name: str
@@ -16,7 +17,7 @@ class TransferPlayer(BaseModel):
     is_free_transfer: bool
     is_loan_out: bool
     is_loan_return: bool
-    market_value_in_eur: int
+    market_value_in_eur: Optional[int]
     transfer_fee: int
     fee_norm: float
     transfer_category: str
@@ -95,6 +96,11 @@ def club_transfers(club_id: int, season: str):
     WHERE club_id = ? AND season = ?
     """
     r = con.execute(q, [club_id, season]).fetchone()
+    if r is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Club transfer summary not found for given season",
+        )
     return TransferClub(
         club_name=r[0],
         incoming_total=r[1],

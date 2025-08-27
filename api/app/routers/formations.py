@@ -29,7 +29,7 @@ def league_formations(competition_id: str, season: str):
            goals_for, goals_against, avg_goals_for, avg_goals_against, ppg, win_percentage
     FROM mart_competition_formation_season
     WHERE competition_id = ? AND season = ?
-    ORDER BY ppg DESC
+    ORDER BY games_played DESC, ppg DESC
     """
     rows = con.execute(q, [competition_id, season]).fetchall()
     return [
@@ -58,7 +58,7 @@ def formation_history():
     SELECT club_formation, games_played, wins, draws, losses,
            goals_for, goals_against, avg_goals_for, avg_goals_against, ppg, win_percentage
     FROM mart_formation_history_performance
-    ORDER BY ppg DESC
+    ORDER BY games_played DESC, ppg DESC
     """
     rows = con.execute(q).fetchall()
     return [

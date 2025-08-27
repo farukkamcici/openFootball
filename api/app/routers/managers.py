@@ -1,4 +1,5 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Query
+from typing import Annotated
 from typing import List
 from pydantic import BaseModel
 from ..db import get_conn
@@ -28,17 +29,16 @@ class ManagerFormation(BaseModel):
 
 
 @router.get("/managers/performance", response_model=List[ManagerPerf])
-def manager_performance(season: str, limit: int = 100):
+def manager_performance(limit: Annotated[int, Query(ge=1, le=500)] = 100):
     """Return manager performance for a season."""
     con = get_conn()
     q = """
     SELECT manager_name, games_played, points, ppg, win_rate
     FROM mart_manager_performance
-    WHERE season = ?
-    ORDER BY ppg DESC
+    ORDER BY games_played DESC, ppg DESC
     LIMIT ?
     """
-    rows = con.execute(q, [season, limit]).fetchall()
+    rows = con.execute(q, [limit]).fetchall()
     return [
         ManagerPerf(
             manager_name=r[0], games_played=r[1], points=r[2], ppg=r[3], win_rate=r[4]
