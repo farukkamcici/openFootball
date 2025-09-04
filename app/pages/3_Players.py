@@ -1,12 +1,40 @@
 import streamlit as st
+import os
+import sys
 
-import api_client as api
-from charts import per90_bar, valuation_trend
-from utils import df_from_list, empty_state, get_list, search_select, filter_bar
+_CUR_DIR = os.path.dirname(__file__)
+_APP_ROOT = os.path.dirname(_CUR_DIR)
+if _APP_ROOT not in sys.path:
+    sys.path.insert(0, _APP_ROOT)
+
+try:
+    from app import api_client as api
+    from app.charts import per90_bar, valuation_trend
+    from app.utils import (
+        df_from_list,
+        empty_state,
+        get_list,
+        search_select,
+        filter_bar,
+        inject_theme,
+        section_tabs,
+    )
+except ModuleNotFoundError:
+    import api_client as api
+    from charts import per90_bar, valuation_trend
+    from utils import (
+        df_from_list,
+        empty_state,
+        get_list,
+        search_select,
+        filter_bar,
+        inject_theme,
+        section_tabs,
+    )
 
 
+inject_theme()
 st.title("Players")
-# Inline filter bar: season + optional competition
 season, competition = filter_bar(
     include_season=True, include_competition=True, key_prefix="player_insights"
 )
@@ -38,7 +66,6 @@ val_season = (
 )
 val_hist = api.player_valuation_history(player_id) if player_id else {}
 
-# Determine which season stats to use based on competition filter
 if competition:
     if comp_season_stats is None:
         empty_state(
@@ -55,11 +82,12 @@ comp_name = (
     else None
 )
 per90_title = f"Per90 Metrics ({comp_name})" if comp_name else "Per90 Metrics"
-st.subheader(per90_title)
+tabs = section_tabs(
+    ["Per90", "Season Summary", "Career", "Valuation"], key="players_tabs"
+)
 ps = season_stats or {}
 
 
-# Safely coerce metrics to float to avoid formatting/type errors
 def _to_float(x) -> float:
     try:
         if x is None:
@@ -77,59 +105,67 @@ g90 = _to_float(ps.get("goals_per90"))
 a90 = _to_float(ps.get("assists_per90"))
 ga90 = _to_float(ps.get("goal_plus_assist_per90"))
 
-cols = st.columns([1, 2])
-with cols[0]:
-    st.metric("Goals/90", f"{g90:.2f}")
-    st.metric("Assists/90", f"{a90:.2f}")
-    st.metric("G+A/90", f"{ga90:.2f}")
-with cols[1]:
-    st.plotly_chart(per90_bar(g90, a90, ga90), use_container_width=True)
-
-st.subheader("Season Summary")
-# Nicer KPI layout instead of raw dict
-cols_sum = st.columns(4)
-with cols_sum[0]:
-    st.metric("Games", f"{ps.get('games_played') or 0}")
-with cols_sum[1]:
-    st.metric("Minutes", f"{ps.get('minutes_played') or 0}")
-with cols_sum[2]:
-    st.metric("Goals", f"{ps.get('goals') or 0}")
-with cols_sum[3]:
-    st.metric("Assists", f"{ps.get('assists') or 0}")
-
-# Career overview (totals across seasons)
-st.subheader("Career Overview")
-try:
-    import pandas as _pd  # local import to avoid global dependency here
-
-    cdf = _pd.DataFrame(career or [])
-    if not cdf.empty:
-        total_games = (
-            _pd.to_numeric(cdf.get("games_played"), errors="coerce").fillna(0).sum()
+with tabs[0]:
+    st.subheader(per90_title)
+    cols = st.columns([1, 2])
+    with cols[0]:
+        st.metric("Goals/90", f"{g90:.2f}")
+        st.metric("Assists/90", f"{a90:.2f}")
+        st.metric("G+A/90", f"{ga90:.2f}")
+    with cols[1]:
+        st.plotly_chart(
+            per90_bar(g90, a90, ga90), use_container_width=True, key="players_per90_bar"
         )
-        total_minutes = (
-            _pd.to_numeric(cdf.get("minutes_played"), errors="coerce").fillna(0).sum()
-        )
-        total_goals = _pd.to_numeric(cdf.get("goals"), errors="coerce").fillna(0).sum()
-        total_assists = (
-            _pd.to_numeric(cdf.get("assists"), errors="coerce").fillna(0).sum()
-        )
-        cols_career = st.columns(4)
-        with cols_career[0]:
-            st.metric("Total Games", f"{int(total_games)}")
-        with cols_career[1]:
-            st.metric("Total Minutes", f"{int(total_minutes)}")
-        with cols_career[2]:
-            st.metric("Total Goals", f"{int(total_goals)}")
-        with cols_career[3]:
-            st.metric("Total Assists", f"{int(total_assists)}")
-    else:
-        empty_state("No career history available.")
-except Exception:
-    empty_state("Career overview unavailable.")
 
-st.subheader("Valuation Trend")
-# Accept multiple shapes: direct list with date/value, or seasonal aggregates
+with tabs[1]:
+    st.subheader("Season Summary")
+    cols_sum = st.columns(4)
+    with cols_sum[0]:
+        st.metric("Games", f"{ps.get('games_played') or 0}")
+    with cols_sum[1]:
+        st.metric("Minutes", f"{ps.get('minutes_played') or 0}")
+    with cols_sum[2]:
+        st.metric("Goals", f"{ps.get('goals') or 0}")
+    with cols_sum[3]:
+        st.metric("Assists", f"{ps.get('assists') or 0}")
+
+with tabs[2]:
+    st.subheader("Career Overview")
+    try:
+        import pandas as _pd
+
+        cdf = _pd.DataFrame(career or [])
+        if not cdf.empty:
+            total_games = (
+                _pd.to_numeric(cdf.get("games_played"), errors="coerce").fillna(0).sum()
+            )
+            total_minutes = (
+                _pd.to_numeric(cdf.get("minutes_played"), errors="coerce")
+                .fillna(0)
+                .sum()
+            )
+            total_goals = (
+                _pd.to_numeric(cdf.get("goals"), errors="coerce").fillna(0).sum()
+            )
+            total_assists = (
+                _pd.to_numeric(cdf.get("assists"), errors="coerce").fillna(0).sum()
+            )
+            cols_career = st.columns(4)
+            with cols_career[0]:
+                st.metric("Total Games", f"{int(total_games)}")
+            with cols_career[1]:
+                st.metric("Total Minutes", f"{int(total_minutes)}")
+            with cols_career[2]:
+                st.metric("Total Goals", f"{int(total_goals)}")
+            with cols_career[3]:
+                st.metric("Total Assists", f"{int(total_assists)}")
+        else:
+            empty_state("No career history available.")
+    except Exception:
+        empty_state("Career overview unavailable.")
+
+with tabs[3]:
+    st.subheader("Valuation Trend")
 vh_items = (
     val_hist
     if isinstance(val_hist, list)
@@ -151,7 +187,6 @@ else:
         plot_df = vh_df
         x_col, y_col = "date", "value"
     elif "season" in cols:
-        # Choose best available seasonal metric
         for cand in [
             "last_market_value",
             "max_market_value",
@@ -169,7 +204,6 @@ else:
             plot_df = None
         else:
             plot_df = vh_df[["season", y_sel]].rename(columns={y_sel: "value"}).copy()
-            # Coerce to numeric in case of strings
             try:
                 plot_df["value"] = plot_df["value"].apply(_to_float)
             except Exception:
@@ -188,9 +222,9 @@ else:
         except Exception:
             pass
         st.plotly_chart(
-            valuation_trend(plot_df, x=x_col, y=y_col), use_container_width=True
+            valuation_trend(plot_df, x=x_col, y=y_col),
+            use_container_width=True,
+            key="players_valuation_trend",
         )
     else:
         empty_state("Valuation data format not supported.")
-
-## Leaderboards moved to dedicated page

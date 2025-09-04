@@ -126,6 +126,38 @@ def sidebar_filters() -> Tuple[Optional[str], Optional[str]]:
     return season, competition
 
 
+def inject_theme() -> None:
+    """Inject minimal CSS tweaks for cleaner spacing and readability.
+
+    Keeps visuals subtle and consistent across pages.
+    """
+    st.markdown(
+        """
+        <style>
+        /* Tighten default padding slightly */
+        .block-container {padding-top: 1.5rem; padding-bottom: 2rem;}
+        /* Dataframe header emphasis */
+        thead tr th {font-weight: 600 !important;}
+        /* Metric labels a bit calmer */
+        [data-testid="stMetricLabel"] div {opacity: 0.8;}
+        /* Plotly container breathing room */
+        .element-container .plotly {padding: 0.25rem 0.25rem;}
+        /* Form submit buttons spacing */
+        form [type="submit"] {margin-top: 0.25rem;}
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def section_tabs(labels: Sequence[str], key: str):
+    """Render tabs and return tab context managers list.
+
+    Wrapper to keep a single place to adjust behavior later if needed.
+    """
+    return st.tabs(labels)
+
+
 def filter_bar(
     include_season: bool = True,
     include_competition: bool = False,

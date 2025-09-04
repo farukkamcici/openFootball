@@ -9,10 +9,10 @@ from .routers import (
     managers,
     transfers,
     search,
+    compare,
+    analytics,
+    system,
 )
-
-# New routers
-from .routers import compare, analytics, system
 
 app = FastAPI(title="OpenFootball API")
 

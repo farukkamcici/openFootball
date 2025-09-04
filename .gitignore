@@ -296,3 +296,5 @@ Thumbs.db
 *.tar.bz2
 *.rar
 *.7z
+
+.streamlit
