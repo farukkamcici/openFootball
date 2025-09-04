@@ -12,7 +12,7 @@ Notes
 - No authentication; all endpoints are GET and read-only.
 
 Base URLs
-- Health: `/health`
+- Health: `/health` and `/api/health`
 - API: `/api/...`
 
 ## Endpoints
@@ -21,6 +21,8 @@ Meta
   - Params: none
 - GET `/api/competitions` — List available competitions.
   - Params: none
+- GET `/api/meta/clubs` — Clubs within a competition and season.
+  - Params: `competition_id` (str, required), `season` (str, required)
 
 League
 - GET `/api/league-table` — League table.
@@ -31,6 +33,24 @@ League
   - Errors: 404 if no clubs match the filters
   - Example: `curl "http://127.0.0.1:8000/api/league-stats?competition_id=GB1&season=2023"`
 
+Search
+- GET `/api/search/players` — Player autocomplete for season, enriched with career summary.
+  - Params: `q` (str, required), `season` (str, required), `limit` (int, 1..100, default 20)
+  - Returns: `player_id`, `player_name`, plus optional career totals from `mart_player_career_summary`:
+    - `total_matches`, `total_minutes`, `total_goals`, `total_assists`, `total_goal_contributions`
+    - `total_yellow_cards`, `total_red_cards`, per-game: `gpg`, `apg`, `total_goal_contributions_pg`
+- GET `/api/search/clubs` — Club autocomplete within league and season, with aggregated career totals.
+  - Params: `q` (str, required), `competition_id` (str, required), `season` (str, required), `limit` (int, 1..100, default 20)
+  - Returns: `club_id`, `club_name`, plus totals aggregated across all seasons from `mart_club_season`:
+    - `total_games_played`, `total_wins`, `total_draws`, `total_losses`, `total_points`
+    - `total_goals_for`, `total_goals_against`, `total_goal_difference`
+
+Compare
+- GET `/api/compare/players` — Compare players by metrics.
+  - Params: `ids` (csv of ints, required), `season` (str, required)
+- GET `/api/compare/clubs` — Compare clubs within a league.
+  - Params: `ids` (csv of ints, required), `season` (str, required), `competition_id` (str, required)
+
 Clubs
 - GET `/api/clubs/{club_id}/season` — Club season summary.
   - Params: `season` (str, required)
@@ -40,6 +60,8 @@ Clubs
   - Params: `season` (str, required)
 - GET `/api/clubs/{club_id}/formations` — Club formation performance.
   - Params: `season` (str, required), `competition_id` (str, required)
+- GET `/api/clubs/{club_id}/history` — Club season history (points/goals/GD).
+  - Params: `metric` (str, optional; frontend only)
 
 Players
 - GET `/api/players/top` — Top players by metric.
@@ -51,6 +73,12 @@ Players
 - GET `/api/players/{player_id}/valuation-season` — Player valuation deltas.
   - Params: `season` (str, required)
   - Errors: 404 if not found
+- GET `/api/players/{player_id}/career` — Player season-by-season stats history.
+  - Params: none
+- GET `/api/players/{player_id}/valuation-history` — Player valuation trend by season.
+  - Params: none
+- GET `/api/players/leaders` — Leaders within a league/season by metric (club-independent).
+  - Params: `season` (str, required), `competition_id` (str, required), `metric` (enum), `min_minutes` (int, ge=0, default 600), `limit` (int, 1..500, default 50)
 
 Market & Analytics
 - GET `/api/market/movers` — Value gainers/losers.
@@ -70,6 +98,8 @@ Managers
   - Params: `limit` (int, 1..500, default 100)
 - GET `/api/managers/formation` — Manager formation performance.
   - Params: `manager_name` (str, required)
+- GET `/api/managers/best-formations` — Best formations ordered by PPG.
+  - Params: `season` (str, required), `limit` (int, 1..500, default 50)
 
 Transfers
 - GET `/api/transfers/player/{player_id}` — Player transfer history.
@@ -80,6 +110,17 @@ Transfers
   - Example: `curl "http://127.0.0.1:8000/api/transfers/club/985?season=2023"`
 - GET `/api/transfers/age-fee-profile` — Transfer fee distribution by age bucket.
   - Params: none
+- GET `/api/transfers/top-spenders` — Top net spenders in a league.
+  - Params: `season` (str, required), `competition_id` (str, required), `limit` (int, default 20)
+- GET `/api/transfers/competition-summary` — Transfer totals per competition.
+  - Params: `season` (str, required)
+- GET `/api/transfers/free-vs-paid` — Free vs paid transfer counts.
+  - Params: `season` (str, required), `competition_id` (str, required)
+
+System
+- GET `/api/health` — API health probe.
+- GET `/api/version` — Build version/time if available.
+- GET `/api/limits` — API default limits.
 
 ## Errors & Conventions
 - 200: Lists return empty arrays when no results.
@@ -91,3 +132,5 @@ Transfers
 - `curl "http://127.0.0.1:8000/api/league-table?competition_id=GB1&season=2023"`
 - `curl "http://127.0.0.1:8000/api/clubs/985/league-split?season=2023"`
 - `curl "http://127.0.0.1:8000/api/formations/league?competition_id=GB1&season=2023"`
+- `curl "http://127.0.0.1:8000/api/search/players?q=har&season=2023"`
+- `curl "http://127.0.0.1:8000/api/compare/players?ids=44,123,456&season=2023"`

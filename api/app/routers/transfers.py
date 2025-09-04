@@ -136,3 +136,116 @@ def age_fee_profile():
         AgeFeeProfile(age_bucket=r[0], transfer_count=r[1], avg_transfer_fee=r[2])
         for r in rows
     ]
+
+
+class TransferSpendRow(BaseModel):
+    club_id: int
+    club_name: str
+    transfer_spend: int
+    transfer_income: int
+    net_spend: int
+
+
+@router.get(
+    "/transfers/top-spenders",
+    response_model=List[TransferSpendRow],
+)
+def top_spenders(season: str, competition_id: str, limit: int = 20):
+    """Return top net spenders for a competition and season."""
+    con = get_conn()
+    q = """
+    SELECT t.club_id, c.club_name, t.transfer_spend, t.transfer_income, t.net_spend
+    FROM mart_transfer_club t
+    JOIN mart_competition_club_season c
+      ON c.club_id = t.club_id
+     AND LEFT(t.season, 4) = c.season
+    WHERE t.season = ? AND c.competition_id = ?
+    ORDER BY t.net_spend DESC
+    LIMIT ?
+    """
+    rows = con.execute(q, [season, competition_id, limit]).fetchall()
+    return [
+        TransferSpendRow(
+            club_id=r[0],
+            club_name=r[1],
+            transfer_spend=r[2],
+            transfer_income=r[3],
+            net_spend=r[4],
+        )
+        for r in rows
+    ]
+
+
+class CompetitionTransferSummary(BaseModel):
+    competition_id: str
+    competition_name: str
+    total_spend: int
+    total_income: int
+    total_net: int
+
+
+@router.get(
+    "/transfers/competition-summary",
+    response_model=List[CompetitionTransferSummary],
+)
+def competition_summary(season: str):
+    """Return transfer spend/income totals per competition for a season."""
+    con = get_conn()
+    q = """
+    SELECT c.competition_id, c.competition_name,
+           SUM(t.transfer_spend) AS total_spend,
+           SUM(t.transfer_income) AS total_income,
+           SUM(t.net_spend) AS total_net
+    FROM mart_transfer_club t
+    JOIN mart_competition_club_season c
+    ON c.club_id = t.club_id
+    AND LEFT(t.season, 4) = c.season
+    WHERE t.season = ?
+    GROUP BY c.competition_id, c.competition_name
+    ORDER BY total_net DESC
+    """
+    rows = con.execute(q, [season]).fetchall()
+    return [
+        CompetitionTransferSummary(
+            competition_id=r[0],
+            competition_name=r[1],
+            total_spend=r[2],
+            total_income=r[3],
+            total_net=r[4],
+        )
+        for r in rows
+    ]
+
+
+class FreeVsPaid(BaseModel):
+    inc_free: int
+    inc_paid: int
+    out_free: int
+    out_paid: int
+
+
+@router.get(
+    "/transfers/free-vs-paid",
+    response_model=FreeVsPaid,
+)
+def free_vs_paid(season: str, competition_id: str):
+    """Return free vs paid transfer counts aggregated for a competition and season."""
+    con = get_conn()
+    q = """
+    SELECT
+      SUM(t.incoming_free_cnt) AS inc_free,
+      SUM(t.incoming_paid_cnt) AS inc_paid,
+      SUM(t.outgoing_free_cnt) AS out_free,
+      SUM(t.outgoing_paid_cnt) AS out_paid
+    FROM mart_transfer_club t
+    JOIN mart_competition_club_season c
+    ON c.club_id = t.club_id
+    AND LEFT(t.season, 4) = c.season
+    WHERE t.season = ? AND c.competition_id = ?
+    """
+    r = con.execute(q, [season, competition_id]).fetchone()
+    if r is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="No data found"
+        )
+    return FreeVsPaid(inc_free=r[0], inc_paid=r[1], out_free=r[2], out_paid=r[3])

@@ -39,3 +39,26 @@ def competitions():
     """
     rows = con.execute(q).fetchall()
     return [CompetitionOut(competition_id=r[0], competition_name=r[1]) for r in rows]
+
+
+class ClubLite(BaseModel):
+    club_id: int
+    club_name: str
+
+
+@router.get(
+    "/clubs",
+    response_model=List[ClubLite],
+    response_model_exclude_none=True,
+)
+def clubs(competition_id: str, season: str):
+    """Return clubs for a competition and season (non-autocomplete)."""
+    con = get_conn()
+    q = """
+    SELECT DISTINCT club_id, club_name
+    FROM mart_competition_club_season
+    WHERE competition_id = ? AND season = ?
+    ORDER BY club_name
+    """
+    rows = con.execute(q, [competition_id, season]).fetchall()
+    return [ClubLite(club_id=r[0], club_name=r[1]) for r in rows]

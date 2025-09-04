@@ -8,7 +8,11 @@ from .routers import (
     formations,
     managers,
     transfers,
+    search,
 )
+
+# New routers
+from .routers import compare, analytics, system
 
 app = FastAPI(title="OpenFootball API")
 
@@ -20,8 +24,13 @@ app.include_router(market.router, prefix="/api", tags=["market"])
 app.include_router(formations.router, prefix="/api", tags=["formations"])
 app.include_router(managers.router, prefix="/api", tags=["managers"])
 app.include_router(transfers.router, prefix="/api", tags=["transfers"])
+app.include_router(search.router, prefix="/api", tags=["search"])
+app.include_router(compare.router, prefix="/api", tags=["compare"])
+app.include_router(analytics.router, prefix="/api", tags=["analytics"])
+app.include_router(system.router, prefix="/api", tags=["system"])
 
 
 @app.get("/health")
 def health():
-    return {"ok": True}
+    """Basic health endpoint."""
+    return {"status": "ok"}
