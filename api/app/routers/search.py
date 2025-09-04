@@ -89,6 +89,55 @@ def search_players(
     ]
 
 
+class ManagerSearch(BaseModel):
+    manager_name: str
+    games_played: int | None = None
+    ppg: float | None = None
+    win_rate: float | None = None
+
+
+@router.get(
+    "/search/managers",
+    response_model=List[ManagerSearch],
+    response_model_exclude_none=True,
+)
+def search_managers(
+    q: str,
+    limit: Annotated[int, Query(ge=1, le=100)] = 20,
+):
+    """Manager autocomplete with best-available season summary per manager."""
+    con = get_conn()
+    qsql = """
+        WITH ranked AS (
+            SELECT manager_name,
+                   games_played,
+                   ppg,
+                   win_rate,
+                   ROW_NUMBER() OVER (
+                       PARTITION BY manager_name
+                       ORDER BY games_played DESC, ppg DESC
+                   ) AS rn
+            FROM mart_manager_performance
+            WHERE manager_name ILIKE '%' || ? || '%'
+        )
+        SELECT manager_name, games_played, ppg, win_rate
+        FROM ranked
+        WHERE rn = 1
+        ORDER BY manager_name
+        LIMIT ?
+        """
+    rows = con.execute(qsql, [q, limit]).fetchall()
+    return [
+        ManagerSearch(
+            manager_name=r[0],
+            games_played=r[1],
+            ppg=r[2],
+            win_rate=r[3],
+        )
+        for r in rows
+    ]
+
+
 @router.get(
     "/search/clubs",
     response_model=List[ClubSearch],
@@ -96,17 +145,15 @@ def search_players(
 )
 def search_clubs(
     q: str,
-    competition_id: str,
     limit: Annotated[int, Query(ge=1, le=100)] = 20,
 ):
-    """Club autocomplete within competition and season with aggregated career totals."""
+    """Club autocomplete across all competitions with aggregated totals."""
     con = get_conn()
     qsql = """
         WITH candidates AS (
             SELECT DISTINCT club_id, club_name
             FROM mart_competition_club_season
-            WHERE competition_id = ?
-              AND club_name ILIKE '%' || ? || '%'
+            WHERE club_name ILIKE '%' || ? || '%'
             ORDER BY club_name
             LIMIT ?
         ),
@@ -121,7 +168,6 @@ def search_clubs(
                    SUM(goals_against)     AS total_goals_against,
                    SUM(goal_difference)   AS total_goal_difference
             FROM mart_competition_club_season
-            WHERE competition_id = ?
             GROUP BY club_id
         )
         SELECT c.club_id,
@@ -138,7 +184,7 @@ def search_clubs(
         LEFT JOIN agg a USING (club_id)
         ORDER BY c.club_name
         """
-    rows = con.execute(qsql, [competition_id, q, limit, competition_id]).fetchall()
+    rows = con.execute(qsql, [q, limit]).fetchall()
     return [
         ClubSearch(
             club_id=r[0],

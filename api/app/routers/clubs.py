@@ -146,6 +146,32 @@ def club_history(club_id: int):
     ]
 
 
+@router.get(
+    "/clubs/{club_id}/history-competition",
+    response_model=List[ClubHistoryRow],
+)
+def club_history_competition(club_id: int, competition_id: str):
+    """Return club season history filtered by competition for charting."""
+    con = get_conn()
+    q = """
+    SELECT season, points, goals_for, goals_against, goal_difference
+    FROM mart_competition_club_season
+    WHERE club_id = ? AND competition_id = ?
+    ORDER BY season
+    """
+    rows = con.execute(q, [club_id, competition_id]).fetchall()
+    return [
+        ClubHistoryRow(
+            season=r[0],
+            points=r[1],
+            goals_for=r[2],
+            goals_against=r[3],
+            goal_difference=r[4],
+        )
+        for r in rows
+    ]
+
+
 @router.get("/clubs/{club_id}/formations", response_model=List[ClubFormation])
 def club_formations(club_id: int, season: str, competition_id: str):
     """Return club formation performance for given season and competition."""

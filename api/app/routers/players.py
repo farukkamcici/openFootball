@@ -63,20 +63,32 @@ def players_top(
     ],
     min_minutes: Annotated[int, Query(ge=0)] = 600,
     limit: Annotated[int, Query(ge=1, le=500)] = 50,
+    competition_id: Optional[str] = Query(default=None),
 ):
-    """Return top players by given metric and season."""
+    """Return top players by given metric and season.
+
+    If `competition_id` is provided, results are scoped to that competition
+    using `mart_competition_player_season`; otherwise `mart_player_season`.
+    """
     con = get_conn()
+    table = "mart_competition_player_season" if competition_id else "mart_player_season"
+    where = ["season = ?", "minutes_played >= ?"]
+    params = [season, min_minutes]
+    if competition_id:
+        where.append("competition_id = ?")
+        params.append(competition_id)
+    where_clause = " AND ".join(where)
     q = f"""
     SELECT player_id, player_name, games_played, minutes_played,
            goals, assists, (goals + assists) AS total_goals_and_assists,
            yellow_cards, red_cards,
            goals_per90, assists_per90, goal_plus_assist_per90, efficiency_score
-    FROM mart_player_season
-    WHERE season = ? AND minutes_played >= ?
+    FROM {table}
+    WHERE {where_clause}
     ORDER BY {metric} DESC
     LIMIT ?
     """
-    rows = con.execute(q, [season, min_minutes, limit]).fetchall()
+    rows = con.execute(q, [*params, limit]).fetchall()
     return [
         PlayerTop(
             player_id=r[0],
@@ -128,6 +140,66 @@ def player_season(player_id: int, season: str):
         goal_plus_assist_per90=r[9],
         efficiency_score=r[10],
         season_last_value_eur=r[11],
+    )
+
+
+class PlayerSeasonCompetition(BaseModel):
+    player_name: str
+    competition_id: str
+    competition_name: Optional[str] = None
+    games_played: int
+    minutes_played: int
+    goals: int
+    assists: int
+    yellow_cards: int
+    red_cards: int
+    goals_per90: Optional[float] = None
+    assists_per90: Optional[float] = None
+    goal_plus_assist_per90: Optional[float] = None
+    efficiency_score: Optional[float] = None
+    season_last_value_eur: Optional[int] = None
+
+
+@router.get(
+    "/players/{player_id}/season-competition",
+    response_model=PlayerSeasonCompetition,
+)
+def player_season_competition(player_id: int, season: str, competition_id: str):
+    """Return player stats for a given season within a competition.
+
+    Backed by mart_competition_player_season (grain: player, season, competition).
+    """
+    con = get_conn()
+    q = """
+    SELECT player_name, competition_id, competition_name,
+           games_played, minutes_played, goals, assists,
+           yellow_cards, red_cards,
+           goals_per90, assists_per90, goal_plus_assist_per90, efficiency_score,
+           season_last_value_eur
+    FROM mart_competition_player_season
+    WHERE player_id = ? AND season = ? AND competition_id = ?
+    """
+    r = con.execute(q, [player_id, season, competition_id]).fetchone()
+    if r is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Player did not play in this competition for the season",
+        )
+    return PlayerSeasonCompetition(
+        player_name=r[0],
+        competition_id=r[1],
+        competition_name=r[2],
+        games_played=r[3],
+        minutes_played=r[4],
+        goals=r[5],
+        assists=r[6],
+        yellow_cards=r[7],
+        red_cards=r[8],
+        goals_per90=r[9],
+        assists_per90=r[10],
+        goal_plus_assist_per90=r[11],
+        efficiency_score=r[12],
+        season_last_value_eur=r[13],
     )
 
 

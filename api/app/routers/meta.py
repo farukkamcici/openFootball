@@ -30,12 +30,15 @@ def seasons():
 
 @router.get("/competitions", response_model=List[CompetitionOut])
 def competitions():
-    """Return all available competitions."""
+    """Return competitions."""
     con = get_conn()
     q = """
-    SELECT DISTINCT competition_id, competition_name
-    FROM mart_competition_club_season
-    ORDER BY competition_id
+    SELECT DISTINCT m.competition_id, m.competition_name
+    FROM mart_competition_club_season m
+    JOIN main_stg.stg_competitions s
+    ON s.competition_id = m.competition_id
+    WHERE s.competition_type IN ('domestic_league', 'international_cup')
+    ORDER BY m.competition_name
     """
     rows = con.execute(q).fetchall()
     return [CompetitionOut(competition_id=r[0], competition_name=r[1]) for r in rows]

@@ -63,7 +63,8 @@ dq:
 	echo "   e.g., great_expectations --v3-api checkpoint run my_checkpoint" || true
 
 app:
-	@echo ">> Starting Streamlit"; \
+	@set -a; [ -f .env ] && . ./.env || true; set +a; \
+	echo ">> Starting Streamlit"; \
 	streamlit run app/Home.py
 
 run: ingest parquet warehouse dbt dq app

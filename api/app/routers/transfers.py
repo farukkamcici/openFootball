@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, status
-from typing import List, Optional
+from typing import List, Optional, Dict
 from pydantic import BaseModel
 from ..db import get_conn
 from datetime import date
@@ -41,6 +41,20 @@ class TransferClub(BaseModel):
     incoming_free_rate: float
     incoming_paid_rate: float
     outgoing_paid_rate: float
+
+
+class ClubTransferItem(BaseModel):
+    player_id: Optional[int] = None
+    player_name: Optional[str] = None
+    transfer_date: date
+    season: str
+    from_club_name: Optional[str] = None
+    to_club_name: Optional[str] = None
+    is_free_transfer: bool
+    is_loan_out: Optional[bool] = None
+    is_loan_return: Optional[bool] = None
+    transfer_fee: Optional[int] = None
+    transfer_category: Optional[str] = None
 
 
 class AgeFeeProfile(BaseModel):
@@ -136,6 +150,65 @@ def age_fee_profile():
         AgeFeeProfile(age_bucket=r[0], transfer_count=r[1], avg_transfer_fee=r[2])
         for r in rows
     ]
+
+
+@router.get("/transfers/club/{club_id}/players")
+def club_transfers_players(
+    club_id: int, season: str
+) -> Dict[str, List[ClubTransferItem]]:
+    """Return incoming and outgoing transfers for a club in a season."""
+    con = get_conn()
+    q_in = """
+    SELECT player_id, player_name, transfer_date, season,
+           from_club_name, to_club_name, is_free_transfer, is_loan_out, is_loan_return,
+           transfer_fee, transfer_category
+    FROM mart_transfer_player
+    WHERE to_club_id = ? AND season = ?
+    ORDER BY transfer_date DESC
+    """
+    q_out = """
+    SELECT player_id, player_name, transfer_date, season,
+           from_club_name, to_club_name, is_free_transfer, is_loan_out, is_loan_return,
+           transfer_fee, transfer_category
+    FROM mart_transfer_player
+    WHERE from_club_id = ? AND season = ?
+    ORDER BY transfer_date DESC
+    """
+    rows_in = con.execute(q_in, [club_id, season]).fetchall()
+    rows_out = con.execute(q_out, [club_id, season]).fetchall()
+    incoming: List[ClubTransferItem] = [
+        ClubTransferItem(
+            player_id=r[0],
+            player_name=r[1],
+            transfer_date=r[2],
+            season=r[3],
+            from_club_name=r[4],
+            to_club_name=r[5],
+            is_free_transfer=r[6],
+            is_loan_out=r[7],
+            is_loan_return=r[8],
+            transfer_fee=r[9],
+            transfer_category=r[10],
+        )
+        for r in rows_in
+    ]
+    outgoing: List[ClubTransferItem] = [
+        ClubTransferItem(
+            player_id=r[0],
+            player_name=r[1],
+            transfer_date=r[2],
+            season=r[3],
+            from_club_name=r[4],
+            to_club_name=r[5],
+            is_free_transfer=r[6],
+            is_loan_out=r[7],
+            is_loan_return=r[8],
+            transfer_fee=r[9],
+            transfer_category=r[10],
+        )
+        for r in rows_out
+    ]
+    return {"incoming": incoming, "outgoing": outgoing}
 
 
 class TransferSpendRow(BaseModel):

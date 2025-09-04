@@ -6,6 +6,8 @@ dbt-core
 dbt-duckdb
 great-expectations
 streamlit
+plotly
+requests
 prefect
 python-dotenv
 ruff

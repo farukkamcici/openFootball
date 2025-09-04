@@ -21,6 +21,7 @@ Use `make run` for end-to-end: ingest → parquet → warehouse → dbt → dq �
 - `ingest/`: Raw → Parquet scripts (e.g., `csv_to_parquet.py`).
 - `warehouse/`: DuckDB loader and artifacts (`load_duckdb.py`, `warehouse/*.duckdb`).
 - `transform/`: dbt project (`dbt_project.yml`, `models/`, `macros/`, `target/`).
+- `api/`: FastAPI service (`api/app/main.py`, routers in `api/app/routers/`). See `api/README.md`.
 - `app/`: Streamlit app entrypoint (make target expects `app/Home.py`).
 - `data/`: Raw and Parquet data controlled by `.env` (`RAW_DIR`, `PARQUET_DIR`, `DATA_DIR`).
 - `quality/`, `docs/`, `ops/`: Reserved for data quality, docs, and ops glue.
@@ -37,6 +38,13 @@ Use `make run` for end-to-end: ingest → parquet → warehouse → dbt → dq �
 - `make run`: End-to-end: ingest → parquet → warehouse → dbt → dq → app.
 
 Helpful: `make help` prints available targets.
+
+## API
+
+- Run locally: `uvicorn api.app.main:app --reload` (from repo root) or `uvicorn app.main:app --reload` (from `api/`).
+- Docs UI: `http://127.0.0.1:8000/docs`.
+- DuckDB path defaults to `warehouse/transfermarkt.duckdb` (override with `LOCAL_DB_PATH`).
+- Details and endpoints: see `api/README.md`.
 
 ## Configuration (.env)
 
@@ -70,7 +78,6 @@ KAGGLE_DATASET=davidcariboo/player-scores
 ## Data Quality
 
 - dbt schema tests defined under `transform/models/**/schema.yml`.
-- Placeholder Great Expectations target: `make dq` (wire up checkpoints when ready).
 
 ## Streamlit App
 
@@ -89,6 +96,8 @@ KAGGLE_DATASET=davidcariboo/player-scores
 - Commits: short, imperative tense (e.g., "Initialize dbt", "Add DuckDB loader").
 - PRs: include purpose, key changes, linked issues, and verification notes (row counts, sample queries, screenshots). Mention impacted `make` targets and `.env` changes.
 - Before opening a PR: run `pre-commit run -a` and `make dbt`.
+
+For full contributor guidance, see `AGENTS.md`.
 
 ## Credits & Data
 
