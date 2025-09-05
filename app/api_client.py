@@ -13,7 +13,7 @@ def _api_base_url() -> str:
             return str(val).rstrip("/")
     except Exception:
         pass
-    return os.getenv("OPENFOOTBALL_API_BASE", "http://localhost:8000").rstrip("/")
+    return os.getenv("OPENFOOTBALL_API_BASE").rstrip("/")
 
 
 def _headers() -> Dict[str, str]:

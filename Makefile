@@ -83,7 +83,7 @@ startup-db:
 	python -m api.startup_db
 
 smoke:
-	@URL=$${OPENFOOTBALL_API_BASE:-http://127.0.0.1:8000}; \
+	@URL=$${OPENFOOTBALL_API_BASE:-openfootball-production.up.railway.app}; \
 	echo ">> Smoke: health"; curl -sS "$$URL/api/health" || true; echo; \
 	echo ">> Smoke: seasons"; curl -sS "$$URL/api/seasons" || true; echo; \
 	echo ">> Smoke: version"; curl -sS "$$URL/api/version" || true; echo

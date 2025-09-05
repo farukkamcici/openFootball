@@ -85,13 +85,6 @@ Tip: set `OPENFOOTBALL_API_BASE` to your API URL (e.g., `export OPENFOOTBALL_API
 - Market: `/api/market/movers`
 - Compare: `/api/compare/players`, `/api/compare/clubs`
 
-### Test API quickly
-```
-export BASE=${OPENFOOTBALL_API_BASE:-http://localhost:8000}
-curl -s "$BASE/api/search/players?q=icardi" | jq
-curl -s "$BASE/api/players/68863/career" | jq
-curl -s "$BASE/api/players/68863/valuation-history" | jq
-```
 
 ## Troubleshooting
 - If the app can’t reach the API, set `OPENFOOTBALL_API_BASE` or `st.secrets["api_base_url"]`.
