@@ -3,6 +3,11 @@ from typing import Any, Dict, Optional
 
 import requests
 import streamlit as st
+import logging
+
+
+_DEBUG = os.getenv("APP_DEBUG_HTTP", "0") in {"1", "true", "TRUE", "yes", "on"}
+logger = logging.getLogger("app.api_client")
 
 
 def _api_base_url() -> str:
@@ -31,12 +36,18 @@ def _url(path: str) -> str:
 
 def _safe_get(url: str, params: Optional[Dict[str, Any]] = None) -> Optional[Dict]:
     try:
+        if _DEBUG:
+            logger.warning("HTTP GET %s params=%s", url, params)
         resp = requests.get(url, params=params, headers=_headers(), timeout=20)
+        if _DEBUG:
+            logger.warning("HTTP %s -> %s", url, resp.status_code)
         if resp.status_code == 404:
             return None
         resp.raise_for_status()
         return resp.json()
     except requests.exceptions.RequestException:
+        if _DEBUG:
+            logger.exception("HTTP error for %s", url)
         return None
 
 
