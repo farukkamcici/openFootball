@@ -258,6 +258,36 @@ def search_select(
     q_key = f"{form_key}_q"
     opts_key = f"{form_key}_options"
     sel_key = f"{form_key}_selected"
+
+    # Seed handling BEFORE widget creation to avoid key mutation errors
+    seed = st.session_state.pop(f"{form_key}_seed_query", None) or st.session_state.pop(
+        f"{q_key}_seed", None
+    )
+    if seed:
+        q_seed = str(seed).strip()
+        if len(q_seed) >= min_chars:
+            try:
+                res = search_fn(q_seed) or {}
+            except Exception:
+                res = {}
+            items = get_list(res)
+            if not items:
+                for rk in result_keys:
+                    items = get_list(res, key=rk)
+                    if items:
+                        break
+            id_to_label_seed: Dict[str, str] = {}
+            for it in items:
+                if not isinstance(it, dict):
+                    continue
+                rid = _first_nonempty(it, id_keys)
+                rname = _first_nonempty(it, name_keys)
+                if rid and rname:
+                    id_to_label_seed[str(rid)] = str(rname)
+            if id_to_label_seed:
+                st.session_state[opts_key] = id_to_label_seed
+                ids = list(id_to_label_seed.keys())
+                st.session_state[sel_key] = ids[0]
     with st.form(form_key):
         q = st.text_input(
             f"Search {label}", "", placeholder=f"Type {label} name...", key=q_key
