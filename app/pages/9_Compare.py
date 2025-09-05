@@ -18,14 +18,23 @@ try:
         empty_state,
         search_select,
         df_from_list,
+        render_sidebar,
     )
 except ModuleNotFoundError:
     import api_client as api
     from charts import COLOR_GAIN, COLOR_LOSS
-    from utils import inject_theme, filter_bar, empty_state, search_select, df_from_list
+    from utils import (
+        inject_theme,
+        filter_bar,
+        empty_state,
+        search_select,
+        df_from_list,
+        render_sidebar,
+    )
 
 
 inject_theme()
+render_sidebar()
 st.title("Compare")
 
 tabs = st.tabs(["Players", "Clubs"])

@@ -16,6 +16,7 @@ try:
         get_list,
         search_select,
         inject_theme,
+        render_sidebar,
         section_tabs,
     )
 except ModuleNotFoundError:
@@ -27,11 +28,13 @@ except ModuleNotFoundError:
         get_list,
         search_select,
         inject_theme,
+        render_sidebar,
         section_tabs,
     )
 
 
 inject_theme()
+render_sidebar()
 st.title("Managers")
 
 sel_manager, _ = search_select(

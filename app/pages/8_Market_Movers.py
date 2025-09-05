@@ -16,6 +16,7 @@ try:
         get_list,
         filter_bar,
         inject_theme,
+        render_sidebar,
         section_tabs,
     )
 except ModuleNotFoundError:
@@ -27,11 +28,13 @@ except ModuleNotFoundError:
         get_list,
         filter_bar,
         inject_theme,
+        render_sidebar,
         section_tabs,
     )
 
 
 inject_theme()
+render_sidebar()
 st.title("Market Movers")
 season, _competition = filter_bar(
     include_season=True, include_competition=False, key_prefix="market_movers"

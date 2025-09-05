@@ -16,6 +16,7 @@ try:
         filter_bar,
         get_list,
         inject_theme,
+        render_sidebar,
         search_select,
         section_tabs,
     )
@@ -28,12 +29,14 @@ except ModuleNotFoundError:
         filter_bar,
         get_list,
         inject_theme,
+        render_sidebar,
         search_select,
         section_tabs,
     )
 
 
 inject_theme()
+render_sidebar()
 st.title("Transfers")
 
 

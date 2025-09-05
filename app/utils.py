@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Iterable, List, Optional, Tuple, Any, Sequence, Dict, Callable
 
+
 import pandas as pd
 import streamlit as st
 
@@ -144,10 +145,84 @@ def inject_theme() -> None:
         .element-container .plotly {padding: 0.25rem 0.25rem;}
         /* Form submit buttons spacing */
         form [type="submit"] {margin-top: 0.25rem;}
+        /* Sidebar styling */
+        section[data-testid="stSidebar"] > div {
+            background: linear-gradient(180deg, #111827 0%, #0E1117 100%);
+            border-right: 1px solid rgba(255,255,255,0.06);
+        }
+        section[data-testid="stSidebar"] .sidebar-header {
+            padding: 12px 10px; margin-bottom: 8px;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+        .sb-card {
+            background: #111827; border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 10px; padding: 10px 12px; margin: 8px 0;
+        }
+        .sb-card .sb-title { font-weight: 600; opacity: .95; margin-bottom: 6px; }
+        .sb-kv { display:flex; justify-content:space-between; opacity:.9; font-size: 0.95rem; }
         </style>
         """,
         unsafe_allow_html=True,
     )
+
+
+def _latest_season_label(labels: Sequence[str]) -> Optional[str]:
+    if not labels:
+        return None
+    import re
+
+    def _start_year(s: str) -> int:
+        try:
+            m = re.search(r"(19|20)\d{2}", str(s))
+            return int(m.group(0)) if m else int(float(str(s)))
+        except Exception:
+            return 0
+
+    return max(labels, key=_start_year)
+
+
+def _fmt_bytes(n: int) -> str:
+    try:
+        n = int(n)
+    except Exception:
+        return "—"
+    if n <= 0:
+        return "0 B"
+    for unit in ["B", "KB", "MB", "GB", "TB"]:
+        if n < 1024:
+            return f"{n:,.0f} {unit}"
+        n /= 1024.0
+    return f"{n:.1f} PB"
+
+
+def render_sidebar() -> None:
+    """Render a minimal, classy sidebar with quick dataset stats.
+
+    Keeps it content-light to avoid conflicting with page-level filters.
+    """
+    with st.sidebar:
+        st.markdown(
+            "<div class='sidebar-header'><strong>OpenFootball</strong></div>",
+            unsafe_allow_html=True,
+        )
+
+        season_list, comp_pairs = _cached_meta_lists()
+        latest = _latest_season_label(season_list)
+        comp_count = len(comp_pairs)
+
+        st.markdown(
+            """
+            <div class="sb-card">
+              <div class="sb-title">Dataset</div>
+              <div class="sb-kv"><span>Seasons</span><span>{seasons}</span></div>
+              <div class="sb-kv"><span>Competitions</span><span>{comps}</span></div>
+              <div class="sb-kv"><span>Latest Season</span><span>{latest}</span></div>
+            </div>
+            """.format(
+                seasons=len(season_list), comps=comp_count, latest=latest or "—"
+            ),
+            unsafe_allow_html=True,
+        )
 
 
 def section_tabs(labels: Sequence[str], key: str):

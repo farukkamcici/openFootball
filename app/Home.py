@@ -8,10 +8,10 @@ if _CUR_DIR not in sys.path:
     sys.path.insert(0, _CUR_DIR)
 
 try:
-    from utils import inject_theme, get_list
+    from utils import inject_theme, get_list, render_sidebar
     import api_client as api
 except ModuleNotFoundError:
-    from app.utils import inject_theme, get_list
+    from app.utils import inject_theme, get_list, render_sidebar
     from app import api_client as api
 
 
@@ -23,6 +23,7 @@ st.set_page_config(
 )
 
 inject_theme()
+render_sidebar()
 
 
 def _season_labels(payload: Any) -> List[str]:

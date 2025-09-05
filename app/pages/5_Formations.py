@@ -15,6 +15,7 @@ try:
         get_list,
         filter_bar,
         inject_theme,
+        render_sidebar,
         section_tabs,
     )
 except ModuleNotFoundError:
@@ -25,11 +26,13 @@ except ModuleNotFoundError:
         get_list,
         filter_bar,
         inject_theme,
+        render_sidebar,
         section_tabs,
     )
 
 
 inject_theme()
+render_sidebar()
 st.title("Formations")
 season, competition_id = filter_bar(
     include_season=True, include_competition=True, key_prefix="formations"

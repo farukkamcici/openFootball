@@ -17,6 +17,7 @@ try:
         search_select,
         filter_bar,
         inject_theme,
+        render_sidebar,
         section_tabs,
     )
 except ModuleNotFoundError:
@@ -29,11 +30,13 @@ except ModuleNotFoundError:
         search_select,
         filter_bar,
         inject_theme,
+        render_sidebar,
         section_tabs,
     )
 
 
 inject_theme()
+render_sidebar()
 st.title("Players")
 season, competition = filter_bar(
     include_season=True, include_competition=True, key_prefix="player_insights"
