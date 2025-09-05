@@ -1,46 +1,108 @@
 # OpenFootball Streamlit App
 
-A simple Streamlit UI to explore football data backed by the OpenFootball FastAPI service and DuckDB warehouse.
-
-## Features
-- League Overview: standings and league summary for a season/competition.
-- Club Dashboard: club season performance and splits.
-- Player Insights: search a player, view season per‑90 metrics, valuation trend, and career totals.
-  - Competition filter: if none selected → shows overall season stats; if selected → shows league‑specific stats; if player didn’t play in that league → shows an info message and hides charts.
-- Player Leaderboards: top players by metric (supports optional competition filter).
-- Formations, Managers, Transfers, Market Movers: additional analyses and tables.
+Streamlit UI for exploring football data backed by the OpenFootball FastAPI and DuckDB warehouse. It provides league, club, player, transfer, and analytics views with interactive filters and Plotly charts.
 
 ## Requirements
 - Python 3.12
-- Dependencies from `requirements.txt` (installed via `make setup`).
-- Running API server (defaults to `http://localhost:8000`).
-  - Configure via Streamlit secrets `api_base_url` or env var `OPENFOOTBALL_API_BASE`.
+- Install deps: `make setup`
+- Running API server: defaults to `http://localhost:8000`
+  - Configure via Streamlit secrets `api_base_url` or env var `OPENFOOTBALL_API_BASE`
 
 ## Quick Start
-1. Copy env: `cp .env.example .env`
-2. Install deps and hooks: `make setup`
-3. Run the API (in another terminal): `uvicorn api.app.main:app --reload`
-4. Launch the app:
-   - `make app` (recommended), or
-   - `streamlit run app/Home.py`
+1) Project setup
+- `cp .env.example .env`
+- `make setup`
 
-## Usage
-- Use the top filter bar to pick a Season and optionally a Competition.
-- Player Insights:
-  - Search and select a player to load metrics.
-  - No competition selected → overall season metrics.
-  - Competition selected → stats scoped to that league; if no appearances, you’ll see a small notice and charts are suppressed.
-- Leaderboards support filtering by competition and minimum minutes.
+2) Run API (separate terminal)
+- `uvicorn app.main:app --reload` from `api/` or `uvicorn api.app.main:app --reload` from repo root
 
-## Notes
-- Competition options are limited to domestic leagues and international cups to keep the list concise.
-- Streamlit caches some API calls briefly (about 5 minutes). If options look stale, clear cache and rerun.
+3) Launch Streamlit
+- `make app` or `streamlit run app/Home.py`
 
-## Project Structure (app/)
-- `Home.py`: entry point and navigation.
-- `pages/`: individual views like League Overview, Player Insights, etc.
-- `utils.py`: small UI/data helpers (filters, search select).
-- `api_client.py`: tiny wrapper around the FastAPI endpoints.
-- `charts.py`: Plotly chart helpers.
+Tip: set `OPENFOOTBALL_API_BASE` to your API URL (e.g., `export OPENFOOTBALL_API_BASE=http://127.0.0.1:8000`).
 
-Enjoy exploring! If you want new views or metrics, open an issue or extend a page under `app/pages/`.
+## Configuration
+- Base URL order of precedence:
+  1. `st.secrets["api_base_url"]`
+  2. `OPENFOOTBALL_API_BASE` env var
+  3. `http://localhost:8000`
+- Streamlit caching: responses cached for ~5 minutes via `@st.cache_data(ttl=300)`.
+
+## App Navigation and Pages
+- `Home`: Quick links to all sections.
+- `Leagues` (pages/1_Leagues.py)
+  - Select season and competition; view table and summary stats.
+  - Endpoints: `/api/seasons`, `/api/competitions`, `/api/league-table`, `/api/league-stats`.
+- `Clubs` (pages/2_Clubs.py)
+  - Club season overview, league split, formations, history.
+  - Endpoints: `/api/meta/clubs`, `/api/clubs/{id}/season`, `/api/clubs/{id}/league-split`, `/api/clubs/{id}/formations`, `/api/clubs/{id}/history`, `/api/clubs/{id}/history-competition`.
+- `Players` (pages/3_Players.py)
+  - Tabs: Career, Season, Value vs Performance.
+  - Career: totals (games, minutes, goals, assists) and valuation by season chart.
+    - Uses: `/api/players/{player_id}/career`, `/api/players/{player_id}/valuation-history`.
+  - Season: season summary metrics plus Per90 bar (Goals/90, Assists/90, G+A/90).
+    - Uses: `/api/players/{player_id}/season` or `/api/players/{player_id}/season-competition` when a league is selected.
+  - Value vs Performance: dual-axis chart with selectable metrics.
+    - Performance options: G+A, G+A/90, Goals/90, Assists/90, Efficiency.
+    - Value options: Last value, Max value, YoY delta, YoY %.
+    - Uses: `/api/players/{player_id}/career`, `/api/players/{player_id}/valuation-history`.
+- `Player Leaderboards` (pages/4_Player_Leaderboards.py)
+  - Top players by metric with min minutes and optional league filter.
+  - Endpoint: `/api/players/top`.
+- `Formations` (pages/5_Formations.py)
+  - League formations by season and history.
+  - Endpoints: `/api/formations/league`, `/api/formations/history`.
+- `Managers` (pages/6_Managers.py)
+  - Performance table and best formations.
+  - Endpoints: `/api/managers/performance`, `/api/managers/best-formations`, `/api/managers/formation`.
+- `Transfers` (pages/7_Transfers.py)
+  - Club transfers, free vs paid, top spenders, age-fee profile.
+  - Endpoints: `/api/transfers/club/{id}`, `/api/transfers/club/{id}/players`, `/api/transfers/free-vs-paid`, `/api/transfers/top-spenders`, `/api/transfers/competition-summary`, `/api/transfers/age-fee-profile`, `/api/transfers/player/{player_id}`.
+- `Market Movers` (pages/8_Market_Movers.py)
+  - Biggest value risers/fallers.
+  - Endpoint: `/api/market/movers`.
+- `Compare` (pages/9_Compare.py)
+  - Compare multiple players or clubs side-by-side.
+  - Endpoints: `/api/compare/players`, `/api/compare/clubs`.
+
+## Charts and Visualizations
+- Plotly-based charts in `app/charts.py` with dark theme.
+- Common helpers:
+  - `per90_bar(goals90, assists90, ga90)` — Per-90 metrics bar.
+  - `valuation_trend(df, x, y)` — valuation lines with currency formatting.
+  - `value_vs_performance_dual(df, x_col, value_col, perf_col, ...)` — dual-axis market value vs performance.
+  - Plus utilities: histograms, scatter plots, radar compare.
+
+## API Reference (Used by the App)
+- Meta: `/api/seasons`, `/api/competitions`
+- Search: `/api/search/players`, `/api/search/clubs`, `/api/search/managers`
+- Leagues: `/api/league-table`, `/api/league-stats`
+- Clubs: `/api/meta/clubs`, `/api/clubs/{id}/season`, `/api/clubs/{id}/league-split`, `/api/clubs/{id}/formations`, `/api/clubs/{id}/history`, `/api/clubs/{id}/history-competition`
+- Players: `/api/players/{id}/season`, `/api/players/{id}/season-competition`, `/api/players/{id}/career`, `/api/players/{id}/valuation-history`, `/api/players/top`
+- Formations: `/api/formations/league`, `/api/formations/history`
+- Managers: `/api/managers/performance`, `/api/managers/formation`, `/api/managers/best-formations`
+- Transfers: `/api/transfers/player/{id}`, `/api/transfers/club/{id}`, `/api/transfers/club/{id}/players`, `/api/transfers/free-vs-paid`, `/api/transfers/top-spenders`, `/api/transfers/competition-summary`, `/api/transfers/age-fee-profile`
+- Market: `/api/market/movers`
+- Compare: `/api/compare/players`, `/api/compare/clubs`
+
+### Test API quickly
+```
+export BASE=${OPENFOOTBALL_API_BASE:-http://localhost:8000}
+curl -s "$BASE/api/search/players?q=icardi" | jq
+curl -s "$BASE/api/players/68863/career" | jq
+curl -s "$BASE/api/players/68863/valuation-history" | jq
+```
+
+## Troubleshooting
+- If the app can’t reach the API, set `OPENFOOTBALL_API_BASE` or `st.secrets["api_base_url"]`.
+- Clear Streamlit cache if filters or options look stale: “Clear cache” → Rerun.
+- Value vs Performance requires both career and valuation data; if one is missing, you’ll see a friendly empty state.
+
+## Folder Structure (app/)
+- `Home.py`: Streamlit entry and navigation.
+- `pages/`: individual views (1_Leagues, 2_Clubs, 3_Players, ...).
+- `api_client.py`: HTTP client for the FastAPI endpoints with caching.
+- `charts.py`: central Plotly chart helpers (dark theme).
+- `utils.py`: shared UI/data utilities (filters, search select, tabs, empty states).
+
+Contributions welcome — add or tweak views under `app/pages/` and keep things single-purpose and composable.
