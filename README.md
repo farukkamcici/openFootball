@@ -1,6 +1,6 @@
 # OpenFootball
 
-End-to-end, local-first football analytics stack built on DuckDB, dbt, and Streamlit. It ingests a Kaggle dataset, converts CSV → Parquet, loads into DuckDB, runs dbt models with tests, and (optionally) serves a Streamlit app.
+End-to-end, local-first football analytics stack built on DuckDB, dbt, and Streamlit. It ingests a Kaggle dataset, converts CSV → Parquet, loads into DuckDB, runs dbt models with tests, stream on FastAPI and serves a Streamlit app.
 
 ## Quickstart
 
@@ -22,7 +22,7 @@ Use `make run` for end-to-end: ingest → parquet → warehouse → dbt → dq �
 - `warehouse/`: DuckDB loader and artifacts (`load_duckdb.py`, `warehouse/*.duckdb`).
 - `transform/`: dbt project (`dbt_project.yml`, `models/`, `macros/`, `target/`).
 - `api/`: FastAPI service (`api/app/main.py`, routers in `api/app/routers/`). See `api/README.md`.
-- `app/`: Streamlit app entrypoint (make target expects `app/Home.py`).
+- `app/`: Streamlit app (entry: `app/Home.py`). See `app/README.md`.
 - `data/`: Raw and Parquet data controlled by `.env` (`RAW_DIR`, `PARQUET_DIR`, `DATA_DIR`).
 - `quality/`, `docs/`, `ops/`: Reserved for data quality, docs, and ops glue.
 
@@ -37,13 +37,19 @@ Use `make run` for end-to-end: ingest → parquet → warehouse → dbt → dq �
 - `make app`: Launch Streamlit locally.
 - `make run`: End-to-end: ingest → parquet → warehouse → dbt → dq → app.
 
+API helpers
+- `make api`: Start FastAPI with uvicorn (dev reload).
+- `make startup-db`: Ensure serving DuckDB exists from release envs.
+- `make smoke`: Hit a few endpoints against `OPENFOOTBALL_API_BASE`.
+
 Helpful: `make help` prints available targets.
 
 ## API
 
 - Run locally: `uvicorn api.app.main:app --reload` (from repo root) or `uvicorn app.main:app --reload` (from `api/`).
 - Docs UI: `http://127.0.0.1:8000/docs`.
-- DuckDB path defaults to `warehouse/transfermarkt.duckdb` (override with `LOCAL_DB_PATH`).
+- CORS: set `CORS_ALLOW_ORIGINS` (comma-separated) when serving the app from another origin.
+- DuckDB (serving): for production-like serving, see `python -m api.startup_db` in `DEPLOY.md` and use `ENV`, `DEV_DB_PATH`/`PROD_DB_PATH`, `RELEASE_DB_URL`, `RELEASE_DB_SHA256`.
 - Details and endpoints: see `api/README.md`.
 
 ## Configuration (.env)
@@ -82,7 +88,7 @@ KAGGLE_DATASET=davidcariboo/player-scores
 ## Streamlit App
 
 - `make app` runs `streamlit run app/Home.py`.
-- This repository currently does not include `app/Home.py`; add it to enable the UI.
+- The app talks to the API at `OPENFOOTBALL_API_BASE` (env) or `st.secrets["OPENFOOTBALL_API_BASE"]`; defaults to `http://localhost:8000`.
 
 ## Troubleshooting
 

@@ -6,7 +6,7 @@ Streamlit UI for exploring football data backed by the OpenFootball FastAPI and 
 - Python 3.12
 - Install deps: `make setup`
 - Running API server: defaults to `http://localhost:8000`
-  - Configure via Streamlit secrets `api_base_url` or env var `OPENFOOTBALL_API_BASE`
+  - Configure via Streamlit secrets `OPENFOOTBALL_API_BASE` or env var `OPENFOOTBALL_API_BASE`
 
 ## Quick Start
 1) Project setup
@@ -23,9 +23,8 @@ Tip: set `OPENFOOTBALL_API_BASE` to your API URL (e.g., `export OPENFOOTBALL_API
 
 ## Configuration
 - Base URL order of precedence:
-  1. `st.secrets["api_base_url"]`
+  1. `st.secrets["OPENFOOTBALL_API_BASE"]`
   2. `OPENFOOTBALL_API_BASE` env var
-  3. `http://localhost:8000`
 - Streamlit caching: responses cached for ~5 minutes via `@st.cache_data(ttl=300)`.
 
 ## App Navigation and Pages

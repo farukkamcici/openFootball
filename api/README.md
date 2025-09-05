@@ -10,12 +10,13 @@ FastAPI service exposing read-only football data backed by DuckDB.
 Environment
 - Required for serving: `ENV`, and one of `DEV_DB_PATH` or `PROD_DB_PATH` (picked by `ENV`).
 - Optional for bootstrap: `RELEASE_DB_URL`, `RELEASE_DB_SHA256` for `python -m api.startup_db`.
+- Optional: `CORS_ALLOW_ORIGINS` (comma-separated) to allow other origins (e.g., Streamlit).
 - Note: `.env` files are NOT auto-loaded by uvicorn/FastAPI. Provide envs via your shell, platform, or `docker run --env-file`.
 
 Docker
-- Build: `docker build -t openfootball-api ./api`
+- Build (root Dockerfile): `docker build -t openfootball-api .`
 - Run (with env file): `docker run --rm -p 8000:8000 --env-file api/.env openfootball-api`
-- The container entrypoint runs: `python -m api.startup_db && uvicorn ...` so the DB is pulled on cold start.
+- The container CMD ensures the DB exists, then serves via uvicorn.
 
 Notes
 - No authentication; all endpoints are GET and read-only.
