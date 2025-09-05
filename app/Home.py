@@ -46,6 +46,7 @@ with gl[1]:
 with gl[2]:
     st.page_link("pages/8_Market_Movers.py", label="💹 Market Movers")
     st.page_link("pages/7_Transfers.py", label="🔄 Transfers")
+    st.page_link("pages/9_Compare.py", label="🆚 Compare")
 
 st.divider()
 

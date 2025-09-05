@@ -254,3 +254,19 @@ def transfers_free_vs_paid(season: str, competition_id: str) -> Optional[Dict]:
         _url("/api/transfers/free-vs-paid"),
         {"season": season, "competition_id": competition_id},
     )
+
+
+# Compare
+@st.cache_data(show_spinner=False, ttl=300)
+def compare_players(ids: str, season: str) -> Optional[Dict]:
+    """Compare players by metrics for a season.
+
+    ids: comma-separated player_id list, e.g., "123,456,789"
+    """
+    return _safe_get(_url("/api/compare/players"), {"ids": ids, "season": season})
+
+
+@st.cache_data(show_spinner=False, ttl=300)
+def compare_clubs(ids: str, season: str) -> Optional[Dict]:
+    """Compare clubs by season totals (aggregated across competitions)."""
+    return _safe_get(_url("/api/compare/clubs"), {"ids": ids, "season": season})
