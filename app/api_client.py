@@ -13,7 +13,7 @@ logger = logging.getLogger("app.api_client")
 def _api_base_url() -> str:
     # Prefer Streamlit secrets, then env var, then default localhost
     try:
-        val = st.secrets["api_base_url"]  # may raise if no secrets configured
+        val = st.secrets["OPENFOOTBALL_API_BASE"]  # may raise if no secrets configured
         if val:
             return str(val).rstrip("/")
     except Exception:
