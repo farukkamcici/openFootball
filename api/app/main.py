@@ -1,9 +1,9 @@
 import os
-import pathlib
 from contextlib import asynccontextmanager
 
-import duckdb
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from .db import get_conn
 from .routers import (
     meta,
     league,
@@ -22,45 +22,33 @@ from .routers import (
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Open a minimal DuckDB connection to verify readiness before serving.
-
-    Fail fast with a helpful error if the DB file is missing or not readable.
-    """
-    env = os.getenv("ENV", "dev").lower()
-    if env == "prod":
-        db_path = os.getenv("PROD_DB_PATH")
-    else:
-        db_path = os.getenv("DEV_DB_PATH")
-    path = pathlib.Path(db_path)
-    if not path.exists():
-        raise RuntimeError(
-            f"DuckDB file not found at {path}. Did you run api.startup_db?"
-        )
+    """Open a DuckDB connection and run a trivial query to ensure readiness."""
     try:
-        with duckdb.connect(str(path), read_only=True) as con:
+        con = get_conn()
+        try:
             con.execute("SELECT 1").fetchone()
+        finally:
+            con.close()
     except Exception as exc:
         raise RuntimeError(
-            f"Failed to open DuckDB at {path} in read-only mode: {exc}"
+            "Failed to open DuckDB with current ENV/paths. "
+            "Ensure startup_db ran and ENV/DEV_DB_PATH/PROD_DB_PATH are set."
         ) from exc
     yield
 
 
-def get_conn() -> duckdb.DuckDBPyConnection:
-    """Return a read-only DuckDB connection using ENV-based path keys.
-
-    - ENV=dev → DEV_DB_PATH (default: warehouse/transfermarkt_serving.duckdb)
-    - ENV=prod → PROD_DB_PATH (default: /tmp/transfermarkt_serving.duckdb)
-    """
-    env = os.getenv("ENV", "dev").lower()
-    if env == "prod":
-        db_path = os.getenv("PROD_DB_PATH")
-    else:
-        db_path = os.getenv("DEV_DB_PATH")
-    return duckdb.connect(db_path, read_only=True)
-
-
 app = FastAPI(title="OpenFootball API", lifespan=lifespan)
+
+# Allow browser apps (e.g., Streamlit) to call the API from other origins
+allow_origins = os.getenv("CORS_ALLOW_ORIGINS", "*")
+origins = [o.strip() for o in allow_origins.split(",") if o.strip()]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=False,
+    allow_methods=["GET", "OPTIONS"],
+    allow_headers=["*"],
+)
 
 app.include_router(meta.router, prefix="/api", tags=["meta"])
 app.include_router(league.router, prefix="/api", tags=["league"])
