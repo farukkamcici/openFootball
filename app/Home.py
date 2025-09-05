@@ -2,7 +2,7 @@ import streamlit as st
 import os
 import sys
 from typing import Any, List, Optional
-import app.api_client as c
+from app import api_client as c
 
 st.caption(f"API base: {c._api_base_url()}")
 
