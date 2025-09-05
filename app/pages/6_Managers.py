@@ -54,7 +54,6 @@ tab_detail, tab_leaderboard, tab_best = section_tabs(
 )
 
 with tab_detail:
-    # Selected manager details (shown only when a manager is selected)
     if sel_manager:
         try:
             cand = api.search_managers(sel_manager) or []

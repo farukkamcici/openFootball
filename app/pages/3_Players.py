@@ -98,7 +98,6 @@ def _to_float(x) -> float:
             return 0.0
         if isinstance(x, (int, float)):
             return float(x)
-        # Handle numeric strings and comma decimals
         s = str(x).strip().replace(",", ".")
         return float(s)
     except Exception:
@@ -111,7 +110,6 @@ ga90 = _to_float(ps.get("goal_plus_assist_per90"))
 
 with tabs[0]:
     st.subheader("Career")
-    # Career totals
     try:
         import pandas as _pd
 
@@ -148,7 +146,6 @@ with tabs[0]:
     with top[3]:
         st.metric("Career Assists", f"{int(total_assists)}")
 
-    # Improved valuation chart with seasons
     st.subheader("Valuation by Season")
     try:
         vh_items = (
@@ -216,7 +213,6 @@ with tabs[1]:
 
 with tabs[2]:
     st.subheader("Value vs Performance")
-    # Side-by-side selectors (slightly larger)
     sel_cols = st.columns([3, 3, 6])
     with sel_cols[0]:
         perf_metric = st.selectbox(
@@ -233,7 +229,6 @@ with tabs[2]:
             key="players_value_metric",
         )
 
-    # Rebuild valuation items for this tab
     vh_items = (
         val_hist
         if isinstance(val_hist, list)
@@ -244,21 +239,17 @@ with tabs[2]:
             or get_list(val_hist, key="seasons")
         )
     )
-    # Ensure pandas is available in this scope
     try:
         import pandas as _pd
     except Exception:
         pass
-    # Import chart helper
     try:
         from app.charts import value_vs_performance_dual
     except ModuleNotFoundError:
         from charts import value_vs_performance_dual
-    # Build performance per season: Goals + Assists (robust to missing columns)
     try:
         cdf = _pd.DataFrame(career or [])
         if not cdf.empty and "season" in cdf.columns:
-            # Prepare numeric columns
             cdf_nums = cdf.assign(
                 goals=_pd.to_numeric(cdf.get("goals"), errors="coerce").fillna(0),
                 assists=_pd.to_numeric(cdf.get("assists"), errors="coerce").fillna(0),
@@ -311,7 +302,6 @@ with tabs[2]:
                     .rename(columns={"efficiency_score": "performance"})
                 )
 
-            # Normalize season to "YYYY/YYYY+1" to align with valuation seasons
             try:
                 if not perf_df.empty:
                     perf_df["season"] = (
@@ -324,10 +314,8 @@ with tabs[2]:
     except Exception:
         perf_df = _pd.DataFrame(columns=["season", "performance"])  # empty
 
-    # Fallback: if empty, but current season stats available, create single-row perf
     try:
         if perf_df.empty and season and isinstance(ps, dict):
-            # Single-season fallback using season-level stats
             if perf_metric == "G+A":
                 g = (
                     _pd.to_numeric(ps.get("goals"), errors="coerce")
@@ -352,7 +340,6 @@ with tabs[2]:
                 val = _pd.to_numeric(ps.get("efficiency_score"), errors="coerce")
             val = 0 if _pd.isna(val) else float(val)
             perf_df = _pd.DataFrame({"season": [season], "performance": [val]})
-            # Normalize single-season fallback as well
             try:
                 perf_df["season"] = (
                     perf_df["season"].astype(int).apply(lambda y: f"{y}/{y+1}")
@@ -362,7 +349,6 @@ with tabs[2]:
     except Exception:
         pass
 
-    # Build valuation per season (selectable metric; robust to different schemas)
     try:
         vdf = _pd.DataFrame(vh_items or [])
         if not vdf.empty:
@@ -396,7 +382,6 @@ with tabs[2]:
                         else _pd.DataFrame(columns=["season", "value"])  # empty
                     )
                 else:
-                    # YoY metrics based on 'last_market_value' by default
                     base = _choose_col("last_market_value")
                     base_df = (
                         vdf[["season", base]].rename(columns={base: "value"}).copy()
@@ -404,7 +389,6 @@ with tabs[2]:
                         else _pd.DataFrame(columns=["season", "value"])  # empty
                     )
                     if not base_df.empty:
-                        # Sort by first year of season
                         import re
 
                         def _year_key(s: str) -> int:
@@ -428,7 +412,6 @@ with tabs[2]:
                 tmp = vdf.copy()
                 tmp["date"] = _pd.to_datetime(tmp["date"], errors="coerce")
 
-                # Map date to season like 2019/20 assuming season starts in July
                 def _season_label(dt: _pd.Timestamp) -> str:
                     if _pd.isna(dt):
                         return ""
@@ -470,7 +453,6 @@ with tabs[2]:
 
     try:
         combined = _pd.merge(val_season_df, perf_df, on="season", how="outer")
-        # Drop empty/blank seasons
         combined = combined[combined["season"].astype(str).str.len() > 0]
         if not combined.empty:
             for col in ["value", "performance"]:

@@ -10,7 +10,6 @@ import api_client as api
 
 
 def empty_state(message: str = "No data available.") -> None:
-    # Minimal, non-intrusive notice
     st.caption(message)
 
 
@@ -27,7 +26,6 @@ def _as_list(obj: Any, key: Optional[str] = None) -> List[Any]:
         value = obj.get(key) if key else None
         if isinstance(value, list):
             return value
-        # If dict but no key or not list, return empty
         return []
     if isinstance(obj, list):
         return obj
@@ -106,7 +104,6 @@ def sidebar_filters() -> Tuple[Optional[str], Optional[str]]:
         st.markdown("### Filters")
         season_list, comp_pairs = _cached_meta_lists()
 
-        # Prepend a "no filter" option so filters are optional
         season_options = ["-"] + season_list
         comp_options: List[Tuple[str, str]] = [("-", "-")] + comp_pairs
 
@@ -247,7 +244,6 @@ def filter_bar(
     season_choice: Optional[str] = None
     comp_choice: Optional[Tuple[str, str]] = None
 
-    # Build columns layout based on included controls
     if include_season and include_competition:
         cols = st.columns([3, 3, 6])
         with cols[0]:
@@ -289,7 +285,6 @@ def filter_bar(
                 key=f"{key_prefix}_competition",
             )
     else:
-        # No filters requested
         return None, None
 
     season = None if (season_choice in (None, "-")) else str(season_choice)
@@ -334,7 +329,6 @@ def search_select(
     opts_key = f"{form_key}_options"
     sel_key = f"{form_key}_selected"
 
-    # Seed handling BEFORE widget creation to avoid key mutation errors
     seed = st.session_state.pop(f"{form_key}_seed_query", None) or st.session_state.pop(
         f"{q_key}_seed", None
     )
@@ -373,12 +367,10 @@ def search_select(
     id_to_label: Dict[str, str] = {}
 
     if not submitted:
-        # If we have previous options in session, render the selectbox to allow changing selection
         prev_options: Dict[str, str] = st.session_state.get(opts_key, {})
         prev_selected: Optional[str] = st.session_state.get(sel_key)
         if prev_options:
             ids = list(prev_options.keys())
-            # Keep currently selected if still present
             index = ids.index(prev_selected) if prev_selected in ids else 0
             selected_id = st.selectbox(
                 label, ids, index=index, format_func=lambda k: prev_options.get(k, k)
@@ -417,7 +409,6 @@ def search_select(
         empty_state(f"No {label.lower()} found for '{q}'.")
         return None, {}
 
-    # Persist options and selection across reruns
     st.session_state[opts_key] = id_to_label
     prev_selected: Optional[str] = st.session_state.get(sel_key)
     index = ids.index(prev_selected) if prev_selected in ids else 0

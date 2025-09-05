@@ -73,7 +73,6 @@ with tab_lb:
             or get_list(top, key="players")
             or get_list(top, key="leaders")
         )
-        # Compute derived metrics if needed
         if metric == "total_goals_and_assists" and metric not in top_df.columns:
             if {"goals", "assists"}.issubset(set(top_df.columns)):
                 g = pd.to_numeric(top_df["goals"], errors="coerce").fillna(0)
@@ -84,7 +83,6 @@ with tab_lb:
                 g90 = pd.to_numeric(top_df["goals_per90"], errors="coerce").fillna(0)
                 a90 = pd.to_numeric(top_df["assists_per90"], errors="coerce").fillna(0)
                 top_df[metric] = g90 + a90
-        # Default sort by selected metric (desc) when available
         if metric in top_df.columns:
             top_df[metric] = pd.to_numeric(top_df[metric], errors="coerce")
             top_df = top_df.sort_values(by=metric, ascending=False, kind="mergesort")

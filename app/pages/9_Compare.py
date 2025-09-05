@@ -79,7 +79,6 @@ with tabs[0]:
     if not season or len(selected_players) < 2:
         empty_state("Pick a season and at least two players (competition optional).")
     else:
-        # Fetch stats per player (competition-specific if provided, else overall season)
         records: List[Dict[str, Any]] = []
         for pid in selected_players:
             if competition:
@@ -93,12 +92,9 @@ with tabs[0]:
         if rows.empty:
             empty_state("No comparable player stats found for selection.")
         else:
-            # Only Key Stats panel
             pass
 
-            # Under-radar stat panel: left player vs right player with metric in middle
             if len(rows) >= 2:
-                # Centered symmetric Key Stats with color highlighting
                 pleft = rows.iloc[0]
                 pright = rows.iloc[1]
                 st.markdown("---")
@@ -213,7 +209,6 @@ with tabs[0]:
                             return _fmt_currency(val) or "-"
                         if "/90" in label or label in ("Efficiency",):
                             return f"{_fmt_float(val) if _fmt_float(val) is not None else 0:.2f}"
-                        # integers by default
                         vi = _fmt_int(val)
                         return f"{vi:,}" if vi is not None else "-"
 
@@ -285,7 +280,6 @@ with tabs[1]:
         else:
             seasons_to_use = [season]
 
-        # Aggregate metrics per selected club
         agg = {
             cid: {
                 "games_played": 0.0,
@@ -298,7 +292,6 @@ with tabs[1]:
         }
 
         if competition:
-            # Use league-split to scope to competition
             for cid in selected_clubs:
                 for s in seasons_to_use:
                     split = api.club_league_split(cid, s) or []
@@ -319,7 +312,6 @@ with tabs[1]:
                                 r.get("goal_difference", 0) or 0
                             )
         else:
-            # Use compare_clubs and sum across competitions
             for s in seasons_to_use:
                 ids_str = ",".join(selected_clubs)
                 res = api.compare_clubs(ids_str, s) or []
@@ -349,7 +341,6 @@ with tabs[1]:
                         for k in agg[cid_str]:
                             agg[cid_str][k] += float(row.get(k, 0) or 0)
 
-        # Build Key Stats view
         if len(selected_clubs) >= 2:
             left = agg[selected_clubs[0]]
             right = agg[selected_clubs[1]]

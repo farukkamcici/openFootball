@@ -49,7 +49,6 @@ def _as_list(payload):
     return payload if isinstance(payload, list) else get_list(payload)
 
 
-# Controls for movers
 ctrl_cols = st.columns([2, 3, 7])
 with ctrl_cols[0]:
     direction = st.radio(
@@ -128,7 +127,6 @@ with tab_movers:
             if alt.empty:
                 empty_state("No movers for selected filters.")
             else:
-                # Format money-like columns in Euros
                 money_cols = [
                     c
                     for c in [
@@ -150,7 +148,6 @@ with tab_movers:
                         alt[c] = alt[c].apply(_fmt_currency)
                     st.dataframe(alt, use_container_width=True, hide_index=True)
     else:
-        # Show main movers table with Euro formatting
         money_cols = [
             c
             for c in [
