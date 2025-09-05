@@ -1,14 +1,23 @@
 # OpenFootball API
 
-FastAPI service exposing read-only football data backed by DuckDB (`warehouse/transfermarkt.duckdb`).
+FastAPI service exposing read-only football data backed by DuckDB.
 
 ## Run Locally
-- From repo root: `uvicorn api.app.main:app --reload`
-- From `api/` dir: `uvicorn app.main:app --reload`
+- From repo root: `python -m api.startup_db && uvicorn api.app.main:app --reload`
+- From `api/` dir: `python -m startup_db && uvicorn app.main:app --reload`
 - Docs & try-it UI: `http://127.0.0.1:8000/docs`
 
+Environment
+- Required for serving: `ENV`, and one of `DEV_DB_PATH` or `PROD_DB_PATH` (picked by `ENV`).
+- Optional for bootstrap: `RELEASE_DB_URL`, `RELEASE_DB_SHA256` for `python -m api.startup_db`.
+- Note: `.env` files are NOT auto-loaded by uvicorn/FastAPI. Provide envs via your shell, platform, or `docker run --env-file`.
+
+Docker
+- Build: `docker build -t openfootball-api ./api`
+- Run (with env file): `docker run --rm -p 8000:8000 --env-file api/.env openfootball-api`
+- The container entrypoint runs: `python -m api.startup_db && uvicorn ...` so the DB is pulled on cold start.
+
 Notes
-- Default DB path: `warehouse/transfermarkt.duckdb` (override with env `LOCAL_DB_PATH`).
 - No authentication; all endpoints are GET and read-only.
 
 Base URLs

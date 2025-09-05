@@ -1,7 +1,7 @@
 SHELL := /bin/bash
 TS := $(shell date +%Y%m%d_%H%M%S)
 
-.PHONY: setup ingest parquet warehouse dbt dq app run help
+.PHONY: setup ingest parquet warehouse dbt dq app run help api startup-db smoke
 
 help:
 	@echo "Targets: setup | ingest | parquet | warehouse | dbt | dq | app | run"
@@ -69,3 +69,21 @@ app:
 
 run: ingest parquet warehouse dbt dq app
 	@echo ">> Done."
+
+# --- API dev utilities ---
+
+api:
+	@set -a; [ -f .env ] && . ./.env || true; set +a; \
+	echo ">> Starting FastAPI (uvicorn)"; \
+	uvicorn api.app.main:app --reload
+
+startup-db:
+	@set -a; [ -f .env ] && . ./.env || true; set +a; \
+	echo ">> Ensuring local DuckDB from release"; \
+	python -m api.startup_db
+
+smoke:
+	@URL=$${OPENFOOTBALL_API_BASE:-http://127.0.0.1:8000}; \
+	echo ">> Smoke: health"; curl -sS "$$URL/api/health" || true; echo; \
+	echo ">> Smoke: seasons"; curl -sS "$$URL/api/seasons" || true; echo; \
+	echo ">> Smoke: version"; curl -sS "$$URL/api/version" || true; echo

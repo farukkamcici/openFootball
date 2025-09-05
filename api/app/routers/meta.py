@@ -35,7 +35,7 @@ def competitions():
     q = """
     SELECT DISTINCT m.competition_id, m.competition_name
     FROM mart_competition_club_season m
-    JOIN main_stg.stg_competitions s
+    JOIN main.stg_competitions s
     ON s.competition_id = m.competition_id
     WHERE s.competition_type IN ('domestic_league', 'international_cup')
     ORDER BY m.competition_name
