@@ -2,9 +2,6 @@ import streamlit as st
 import os
 import sys
 from typing import Any, List, Optional
-from app import api_client as c
-
-st.caption(f"API base: {c._api_base_url()}")
 
 _CUR_DIR = os.path.dirname(__file__)
 if _CUR_DIR not in sys.path:
@@ -16,6 +13,8 @@ try:
 except ModuleNotFoundError:
     from app.utils import inject_theme, get_list, render_sidebar
     from app import api_client as api
+
+st.caption(f"API base: {api._api_base_url()}")
 
 
 st.set_page_config(

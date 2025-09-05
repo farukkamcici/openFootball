@@ -21,7 +21,6 @@ def _api_base_url() -> str:
     env = os.getenv("OPENFOOTBALL_API_BASE")
     if env:
         return str(env).rstrip("/")
-    return "http://localhost:8000"
 
 
 def _headers() -> Dict[str, str]:
