@@ -4,11 +4,11 @@ LABEL authors="farukkamcici"
 
 WORKDIR /api
 
-COPY api/requirements.txt .
+COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY api/app app/
-COPY api/startup_db.py startup_db.py
+COPY app app/
+COPY startup_db.py startup_db.py
 
 EXPOSE 8000
 
