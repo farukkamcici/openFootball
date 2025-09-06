@@ -1,0 +1,33 @@
+name: Keep App Awake
+
+on:
+  schedule:
+    # Runs at the top of every hour (UTC)
+    - cron: '0 * * * *'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    name: Ping keepalive URL
+    runs-on: ubuntu-latest
+    env:
+      DEFAULT_URL: https://openfootball-xbglrxdzq7w3tdsgfwwbwv.streamlit.app/
+    steps:
+      - name: Ping app endpoint
+        shell: bash
+        run: |
+          set -euo pipefail
+          URL="$DEFAULT_URL"
+          echo "Pinging: ${URL}"
+          # Try health endpoints, then seasons, then fallback to root
+          for path in "/health" "/api/health" "/api/seasons" "/"; do
+            target="${URL%/}${path}"
+            echo "➡  GET ${target}"
+            if curl -fsS --retry 2 --retry-all-errors --max-time 20 -A "keepalive-bot/1.0" "$target" >/dev/null; then
+              echo "✅ OK: ${target}"
+              exit 0
+            fi
+          done
+          echo "⚠️  Ping failed for /health, /api/health, /api/seasons, and /" >&2
+          # Do not fail the workflow to avoid noisy alerts
+          exit 0
