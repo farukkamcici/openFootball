@@ -2,8 +2,7 @@ name: Keep App Awake
 
 on:
   schedule:
-    # Runs at the top of every hour (UTC)
-    - cron: '0 * * * *'
+    - cron: '*/10 * * * *'
   workflow_dispatch:
 
 jobs:
